@@ -110,6 +110,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="binary_heap.h" />
+    <ClInclude Include="exprtk.hpp" />
+    <ClInclude Include="GA_model_solver.h" />
+    <ClInclude Include="GA_solver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
