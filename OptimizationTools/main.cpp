@@ -19,7 +19,7 @@ int main() {
 	traits2.upper_bound.continuous = 5.0;
 	traits2.step_size.continuous = 1.0;
 	std::unordered_map<std::string, GA_model_solver::cont> params;
-	GA_model_solver solver{ equation, dec_vars, params, 4, 10000 };
+	GA_model_solver solver{ equation, dec_vars, params, 10, 0.1, 5000 };
 	solver.print_individual(solver.solve());
 	
 	return 0;

@@ -12,9 +12,6 @@
 #include<algorithm>
 #include<iostream>
 
-//population coefficient has to be >= 1
-#define POPULATION_COEF 20
-
 static std::random_device rd;
 static std::mt19937 gen(rd());
 static std::uniform_real_distribution<double> unif{ 0.0, 1.0 };
@@ -133,10 +130,9 @@ private:
 	std::vector<double> dec_var_values;
 	std::vector<std::string> dec_var_names;
 	std::vector<Gene_Traits> dec_var_traits;
-	prob p_s;
-	size_t elit_num;
 	std::unordered_set<size_t> elite_indexes;	//MAKE SURE IT IS USED!!!!!
-	size_t generation_max;
+	prob p_s;
+	size_t population_coef, elit_num, generation_max;
 
 	bool check_prob(prob p) {
 		return (p >= 0.0 && p <= 1.0);
@@ -313,7 +309,7 @@ public:
 		f_type fitness_max = -std::numeric_limits<f_type>::max();
 		size_t fit_max_index = 0;
 		size_t gsz = dec_var_values.size();
-		size_t psz = POPULATION_COEF * gsz;
+		size_t psz = population_coef * gsz;
 		population.resize(psz);
 		size_t npsz = psz - elit_num;
 		std::vector<Individual_ext*> newPopulation;
@@ -413,10 +409,12 @@ public:
 		population.clear();
 		return res;
 	}
+	
+	//population coefficient has to be >= 1
 	GA_model_solver(
 		const std::string& objective_func, const std::unordered_map<std::string, Gene_Traits>& dec_vars, 
-		const std::unordered_map<std::string, cont>& params, size_t elit_n, size_t generation = 1000, 
-		double cool_rate = 0.99, double conv_rate = 0.25, prob mut = 0.1, prob cro = 0.5, prob select = 0.2,
+		const std::unordered_map<std::string, cont>& params, size_t pop_coef, double elit_ratio, size_t generation = 1000, 
+		double cool_rate = 0.99, double conv_rate = 0.1, prob mut = 0.1, prob cro = 0.5, prob select = 0.2,
 		t_type temp_min = 0.0, t_type temp_max = 100000.0) {
 		size_t vsz = dec_vars.size();
 		if (vsz == 0) {
@@ -437,10 +435,20 @@ public:
 		}
 		p_c = cro;
 		p_s = select;
-		if (elit_n >= POPULATION_COEF * vsz) {
+		if (pop_coef == 0) {
+			throw "ERROR: invalid pop_coef";
+		}
+		population_coef = pop_coef;
+		if (elit_ratio <= 0 || elit_ratio >= 1.0) {
 			throw "ERROR: invalid elit_n";
 		}
-		elit_num = elit_n;
+		elit_num = (size_t)std::llround(elit_ratio * pop_coef * vsz);
+		if (elit_num == pop_coef * vsz) {
+			--elit_num;
+		}
+		else if (elit_num == 0) {
+			++elit_num;
+		}
 		an = nullptr;
 		an = (Annealing*) new Anneal_impl{ temp_min, temp_max, cool_rate, conv_rate };
 		symbol_table.add_constants();
