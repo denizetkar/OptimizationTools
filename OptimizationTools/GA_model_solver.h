@@ -180,7 +180,7 @@ private:
 	std::vector<Gene_Traits> dec_var_traits;
 	prob p_s;
 	size_t population_coef, elit_num, generation_max;
-	numeric_type cons_tolerance;
+	numeric_type prev_fit, cur_fit;
 
 	bool check_prob(prob p) {
 		return (p >= 0.0 && p <= 1.0);
@@ -312,6 +312,7 @@ private:
 				}
 			}
 		}
+		cur_fit = fitness_max;
 		for (size_t i = 0; i < psz; ++i) {
 			((Individual_ext*)population[i])->diversity = 0.0;
 			for (size_t j = 0; j < gsz; ++j) {
@@ -399,6 +400,35 @@ public:
 				elite_indexes.insert(container[i].second);
 			}
 			
+			if (cur_fit == prev_fit) {
+				auto elite_not_found = elite_indexes.end();
+				for (size_t i = psz/2; i < psz; ++i) {
+					if (elite_indexes.find(i) == elite_not_found) {
+						delete population[i];
+						population[i] = get_individual(true);
+					}
+				}
+				//PROCESS POPULATION TO FIND CUMULATIVE PROBABILITY OF SELECTION FOR EACH INDIVIDUAL
+				process_population();
+
+				//FIND 'elit_num' NUMBER OF ELITES WITH HIGHEST FITNESS VALUES
+				//(fitness values are already calculated in 'process_population' function)
+				q.clear();
+				for (size_t i = 0; i < psz; ++i) {
+					if (q.size() < elit_num) {
+						q.push(Ind_ext_t{ population[i],i });
+					}
+					else if (elit_comp(population[q.top().second], population[i])) {
+						q.pop(); q.push(Ind_ext_t{ population[i],i });
+					}
+				}
+				std::vector<Ind_ext_t>& container = q.get_container();
+				elite_indexes.clear();
+				for (size_t i = 0; i < elit_num; ++i) {
+					elite_indexes.insert(container[i].second);
+				}
+			}
+			prev_fit = cur_fit;
 			/*
 			//FIRST 'elit_num' INDIVIDUALS ARE MARKED AS ELITE
 			elite_indexes.clear();
@@ -491,17 +521,18 @@ public:
 		const std::string& objective_func, const std::unordered_map<std::string, Gene_Traits>& dec_vars, 
 		const std::unordered_map<std::string, numeric_type>& params, const std::vector<std::string>& constraints,
 		size_t pop_coef, double elit_ratio, size_t generation = 1000, double cool_rate = 0.99, double conv_rate = 0.1,
-		numeric_type cons_tol = numeric_type{ 0.0001 }, prob mut = 0.1, prob cro = 0.5, prob select = 0.2,
+		numeric_type cons_tol = numeric_type{ 0.001 }, prob mut = 1.0, prob cro = 0.5, prob select = 0.2,
 		t_type temp_min = 0.0, t_type temp_max = 100000.0) {
 		size_t vsz = dec_vars.size();
 		if (vsz == 0) {
 			throw "ERROR: dec_vars == 0";
 		}
+		prev_fit = -std::numeric_limits<numeric_type>::max();
 		if (generation <= 10) {
 			throw "ERROR: too few generations";
 		}
 		generation_max = generation;
-		cons_tolerance = std::fabs(cons_tol);
+		numeric_type cons_tolerance = std::fabs(cons_tol);
 		if (!check_prob(p_m) || !check_prob(cro) || !check_prob(p_s)) {
 			throw "ERROR: invalid probability";
 		}

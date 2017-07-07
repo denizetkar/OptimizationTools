@@ -37,4 +37,9 @@ template <class T, class Container = std::vector<T>,
 			std::pop_heap(c.begin(), c.end(), comp);
 			c.pop_back();
 		}
+
+		void clear()
+		{
+			c.clear();
+		}
 };

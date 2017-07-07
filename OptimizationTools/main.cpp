@@ -20,10 +20,9 @@ int main() {
 	traits2.step_size.continuous = 1.0;
 	std::unordered_map<std::string, GA_model_solver<>::cont_type> params;
 	std::vector<std::string> constraints;
-	constraints.push_back("x + y <= 1");
-	constraints.push_back("x == y");
+	constraints.push_back("x <= y");
 	GA_model_solver<> solver{ equation, dec_vars, params, constraints, 
-		10, 0.1, 5000, 0.99, 0.1, 0.001 };
+		10, 0.1, 5000, 0.99, 0.1, 0.01 };
 	GA_model_solver<>::Solution* soln = solver.solve();
 	
 	std::cout << soln << std::endl;
