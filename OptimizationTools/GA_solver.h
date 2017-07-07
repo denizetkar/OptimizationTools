@@ -1,13 +1,17 @@
 #include<vector>
 #include<limits>
 #include<utility>
+#include<unordered_map>
+#include<string>
 
+template <typename numeric_type>
 class GA_solver {
 public:
 	using t_type = double;
 	using prob = double;
+	using Solution = std::unordered_map<std::string, numeric_type>;
 protected:
-	using f_type = double;
+	using f_type = numeric_type;
 	class Annealing {
 	protected:
 		t_type temperature;
@@ -27,7 +31,6 @@ protected:
 		virtual double get_annealing() = 0;
 		virtual void cool_down() = 0;
 	};
-public:
 	struct Gene {
 		virtual ~Gene() {}
 		virtual void init_rand() = 0;
@@ -36,6 +39,14 @@ public:
 	struct Gene_Traits_Base {};
 	struct Individual {
 		std::vector<Gene*> genes;
+		f_type fitness;
+		numeric_type criteria;
+		virtual bool operator<(const Individual& rhs) const {
+			return criteria < rhs.criteria;
+		}
+		virtual bool operator>(const Individual& rhs) const {
+			return criteria > rhs.criteria;
+		}
 		virtual ~Individual() {
 			for (size_t i = 0, sz = genes.size(); i < sz; ++i) {
 				if (genes[i]) {
@@ -44,38 +55,9 @@ public:
 			}
 		}
 	};
-	virtual Individual* solve() = 0;
+public:
+	virtual Solution* solve() = 0;
 protected:
-	struct Individual_ext {
-		Individual* ind;
-		prob cumul_s;
-		double criteria;
-		double diversity;
-		f_type fitness;
-		Individual_ext(Individual* _ind = nullptr) : ind{ _ind } {}
-		virtual ~Individual_ext() {
-			if (ind) {
-				delete ind;
-			}
-		}
-		bool operator<(const Individual_ext& rhs) const {
-			return criteria < rhs.criteria;
-		}
-		bool operator>(const Individual_ext& rhs) const {
-			return criteria > rhs.criteria;
-		}
-		struct Comp_Ptr_Smaller {
-			bool operator()(const Individual_ext * i1, const Individual_ext * i2) {
-				return *i1 < *i2;
-			}
-		};
-		struct Comp_Ptr_Bigger {
-			bool operator()(const Individual_ext * i1, const Individual_ext * i2) {
-				return *i1 > *i2;
-			}
-		};
-	};
-
 	virtual f_type fitness(Individual const *) = 0;
 	virtual void mutate(Individual*) = 0;
 	virtual Individual* cross_over(Individual*, Individual*) = 0;
@@ -83,5 +65,5 @@ protected:
 
 	prob p_m, p_c;
 	Annealing* an; // for dynamic step size
-	std::vector<Individual_ext*> population;
+	std::vector<Individual*> population;
 };
