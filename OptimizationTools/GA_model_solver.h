@@ -585,7 +585,7 @@ public:
 				if (constraints[i][j] == '>') {
 					isValid = true;
 					if (constraints[i][j + 1] == '=') {
-						normalized.append("-(").append(constraints[i].substr(0, j - 1)).
+						normalized.append("-(").append(constraints[i].substr(0, j)).
 							append(")+(").append(constraints[i].substr(j + 2)).append(")");
 					}
 					else {
@@ -598,11 +598,11 @@ public:
 				else if (constraints[i][j] == '<') {
 					isValid = true;
 					if (constraints[i][j + 1] == '=') {
-						normalized.append(constraints[i].substr(0, j - 1)).
+						normalized.append(constraints[i].substr(0, j)).
 							append("-(").append(constraints[i].substr(j + 2)).append(")");
 					}
 					else {
-						normalized.append(constraints[i].substr(0, j - 1)).
+						normalized.append(constraints[i].substr(0, j)).
 							append("-(").append(constraints[i].substr(j + 1)).append(")").append("+").
 							append(std::to_string(cons_tolerance));
 					}
@@ -613,7 +613,7 @@ public:
 						isValid = true;
 						//MAKE ADDITIONAL push_back to constraint_expressions
 						//h(x)-E <= 0, -h(x)-E <= 0
-						normalized.append(constraints[i].substr(0, j - 1)).
+						normalized.append(constraints[i].substr(0, j)).
 							append("-(").append(constraints[i].substr(j + 2)).append("+").
 							append(std::to_string(cons_tolerance)).append(")");
 						if (parser.compile(normalized, expression) == false) {
@@ -621,7 +621,7 @@ public:
 						}
 						constraint_expressions.push_back(expression);
 						normalized.clear();
-						normalized.append("-(").append(constraints[i].substr(0, j - 1)).
+						normalized.append("-(").append(constraints[i].substr(0, j)).
 							append(")+(").append(constraints[i].substr(j + 2)).append(")-").
 							append(std::to_string(cons_tolerance));
 						break;
