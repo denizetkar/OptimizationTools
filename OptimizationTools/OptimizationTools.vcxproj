@@ -117,6 +117,8 @@
     <ClInclude Include="exprtk.hpp" />
     <ClInclude Include="GA_model_solver.h" />
     <ClInclude Include="GA_solver.h" />
+    <ClInclude Include="simplex.h" />
+    <ClInclude Include="split.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

@@ -27,6 +27,12 @@
     <ClInclude Include="GA_solver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="simplex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="split.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

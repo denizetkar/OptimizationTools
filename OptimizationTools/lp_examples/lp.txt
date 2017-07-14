@@ -1,0 +1,6 @@
+dense
+URS URS
+3 4 0
+LTE 1 2 14
+GTE 3 -1 0
+LTE 1 -1 2
