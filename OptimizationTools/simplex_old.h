@@ -401,10 +401,8 @@ public:
 				}
 				//IF THERE IS NO NEGATIVE COEFFICIENT THEN WE REACHED OPTIMALITY
 				if (isOptimal) {
-					if (!zeroCheck(two_phase_z.rhs)) {	//CASE1
-						//throw "ERROR: phase-1 optimality where rhs is non-zero";
-						delete soln;
-						return nullptr;
+					if (!zeroCheck(two_phase_z.rhs)) {
+						throw "ERROR: phase-1 optimality where rhs is non-zero";
 					}
 					break;
 				}
@@ -490,35 +488,51 @@ public:
 			for (size_t i = 0; i < esz; ++i) {
 				variables[equations[i].basic_var_index].val = equations[i].rhs;
 			}
-			//EITHER CASE2 OR CASE3 (since it didn't return)
-			bool isCase2 = true;
-			for (size_t i = 0; i < esz; ++i) {
-				if (variables[equations[i].basic_var_index].var_type == Variable::ARTF_VAR) {
-					isCase2 = false;
-					artf_var_indexes.erase(equations[i].basic_var_index);
+			//CHECK IF SUM OF ARTIFICIAL VARIABLES EQUAL TO 0
+			//CASE 1-2-3
+			tmp = numeric_type{ 0.0 };
+			std::unordered_set<size_t> artf_var_indexes;
+			for (size_t i = variables.size() - 1; variables[i].var_type != Variable::URS_VAR && 
+				variables[i].var_type != Variable::DEC_VAR; --i) {
+				if (variables[i].var_type == Variable::ARTF_VAR) {
+					tmp += variables[i].val;
+					artf_var_indexes.insert(i);
 				}
 			}
-			//IN EITHER CASE WE DROP THE NON-BASIC ARTIFICIAL VARIABLES FROM ALL ROWS
-			for (size_t i = 0; i < esz; ++i) {
-				for (auto itr = artf_var_indexes.begin(),
-					end = artf_var_indexes.end(); itr != end; ++itr) {
-					equations[i].var_to_coef.erase(*itr);
-				}
-			}
-			if (!isCase2) {	//DROP DECISION VARIABLES WITH POSITIVE COEFFICIENT IN 'two_phase_z'
-				for (auto itr = two_phase_z.var_to_coef.begin(),
-					end = two_phase_z.var_to_coef.end(); itr != end; ++itr) {
-					switch (variables[itr->first].var_type) {
-					case Variable::DEC_VAR:
-					case Variable::URS_VAR:
-						if (itr->second > 0.0) {
-							equations[0].var_to_coef.erase(itr->first);
-							variables[itr->first].val = numeric_type{ 0.0 };
-						}
-					default:
-						break;
+			if (zeroCheck(tmp)) {	//EITHER CASE2 OR CASE3
+				bool isCase2 = true;
+				for (size_t i = 0; i < esz; ++i) {
+					if (variables[equations[i].basic_var_index].var_type == Variable::ARTF_VAR) {
+						isCase2 = false;
+						artf_var_indexes.erase(equations[i].basic_var_index);
 					}
 				}
+				//IN EITHER CASE WE DROP THE NON-BASIC ARTIFICIAL VARIABLES FROM ALL ROWS
+				for (size_t i = 0; i < esz; ++i) {
+					for (auto itr = artf_var_indexes.begin(),
+						end = artf_var_indexes.end(); itr != end; ++itr) {
+						equations[i].var_to_coef.erase(*itr);
+					}
+				}
+				if (!isCase2) {	//DROP DECISION VARIABLES WITH POSITIVE COEFFICIENT IN 'two_phase_z'
+					for (auto itr = two_phase_z.var_to_coef.begin(),
+						end = two_phase_z.var_to_coef.end(); itr != end; ++itr) {
+						switch (variables[itr->first].var_type) {
+						case Variable::DEC_VAR:
+						case Variable::URS_VAR:
+							if (itr->second > 0.0) {
+								equations[0].var_to_coef.erase(itr->first);
+								variables[itr->first].val = numeric_type{ 0.0 };
+							}
+						default:
+							break;
+						}
+					}
+				}
+			}
+			else {	//CASE1
+				delete soln;
+				return nullptr;
 			}
 		}
 

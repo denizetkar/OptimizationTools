@@ -17,6 +17,7 @@ static std::mt19937 gen(rd());
 static std::uniform_real_distribution<double> unif{ 0.0, 1.0 };
 static std::normal_distribution<double> norm{};
 
+//TRIES TO MAXIMIZE THE OBJECTIVE FUNCTION AND SATISFY ALL CONSTRAINTS
 template <typename numeric_type = double, typename discrete_type = long long>
 class GA_model_solver : public GA_solver<numeric_type> {
 
@@ -47,10 +48,10 @@ class GA_model_solver : public GA_solver<numeric_type> {
 		}
 		~Gene_disc() {}
 		void init_rand() {
-			val = lower + static_cast<discrete_type>((unif(gen)*(upper - lower)));
+			val = lower + static_cast<discrete_type>(static_cast<numeric_type>(unif(gen))*static_cast<numeric_type>(upper - lower));
 		}
 		void mutate(double annealing) {
-			discrete_type delta = static_cast<discrete_type>(std::llround(step_size * norm(gen) * annealing));
+			discrete_type delta = static_cast<discrete_type>(std::round(static_cast<numeric_type>(step_size) * static_cast<numeric_type>(norm(gen) * annealing)));
 			//discrete_type delta = static_cast<discrete_type>(std::llround(2.0 * step_size * (2.0 * unif(gen) - 1.0) * annealing));
 			if (delta > upper - val) {
 				delta = upper - val;
@@ -73,10 +74,10 @@ class GA_model_solver : public GA_solver<numeric_type> {
 		}
 		~Gene_cont() {}
 		void init_rand() {
-			val = lower + static_cast<numeric_type>(unif(gen)*(upper - lower));
+			val = lower + (upper - lower) * static_cast<numeric_type>(unif(gen));
 		}
 		void mutate(double annealing) {
-			numeric_type delta = static_cast<numeric_type>(step_size * norm(gen) * annealing);
+			numeric_type delta = step_size * static_cast<numeric_type>(norm(gen) * annealing);
 			//numeric_type delta = static_cast<numeric_type>(2.0 * step_size * (2.0 * unif(gen) - 1.0) * annealing);
 			if (delta > upper - val) {
 				delta = upper - val;
@@ -382,7 +383,7 @@ public:
 		for (size_t generation = 0; generation < generation_max; ++generation) {
 			//PROCESS POPULATION TO FIND CUMULATIVE PROBABILITY OF SELECTION FOR EACH INDIVIDUAL
 			process_population();
-			
+
 			//FIND 'elit_num' NUMBER OF ELITES WITH HIGHEST FITNESS VALUES
 			//(fitness values are already calculated in 'process_population' function)
 			binary_heap<Ind_ext_t, std::vector<Ind_ext_t>, Comp_Ind_Ext_t_Ptr_Elite_Selection> q;
@@ -399,10 +400,10 @@ public:
 			for (size_t i = 0; i < elit_num; ++i) {
 				elite_indexes.insert(container[i].second);
 			}
-			
+
 			if (cur_fit == prev_fit) {
 				auto elite_not_found = elite_indexes.end();
-				for (size_t i = psz/2; i < psz; ++i) {
+				for (size_t i = psz / 2; i < psz; ++i) {
 					if (elite_indexes.find(i) == elite_not_found) {
 						delete population[i];
 						population[i] = get_individual(true);
@@ -433,7 +434,7 @@ public:
 			//FIRST 'elit_num' INDIVIDUALS ARE MARKED AS ELITE
 			elite_indexes.clear();
 			for (size_t i = 0; i < elit_num; ++i) {
-				elite_indexes.insert(i);
+			elite_indexes.insert(i);
 			}
 			*/
 			//CREATE NEW POPULATION TO REPLACE NON-ELITE INDIVIDUALS
@@ -441,7 +442,7 @@ public:
 				Individual* ind1 = select_individual();
 				Individual* ind2 = select_individual();
 				Individual* ind;
-				
+
 				if (ind1 == ind2) {
 					ind = get_individual();
 					set_individual(ind, ind1);
@@ -515,12 +516,12 @@ public:
 		population.clear();
 		return res;
 	}
-	
+
 	//population coefficient has to be >= 1
 	GA_model_solver(
-		const std::string& objective_func, const std::unordered_map<std::string, Gene_Traits>& dec_vars, 
+		const std::string& objective_func, const std::unordered_map<std::string, Gene_Traits>& dec_vars,
 		const std::unordered_map<std::string, numeric_type>& params, const std::vector<std::string>& constraints,
-		size_t pop_coef, double elit_ratio, size_t generation = 1000, double cool_rate = 0.99, double conv_rate = 0.1,
+		size_t pop_coef = 10, double elit_ratio = 0.1, size_t generation = 1000, double cool_rate = 0.99, double conv_rate = 0.1,
 		numeric_type cons_tol = numeric_type{ 0.001 }, prob mut = 1.0, prob cro = 0.5, prob select = 0.2,
 		t_type temp_min = 0.0, t_type temp_max = 100000.0) {
 		size_t vsz = dec_vars.size();
@@ -532,7 +533,7 @@ public:
 			throw "ERROR: too few generations";
 		}
 		generation_max = generation;
-		numeric_type cons_tolerance = std::fabs(cons_tol);
+		numeric_type cons_tolerance = std::abs(cons_tol);
 		if (!check_prob(p_m) || !check_prob(cro) || !check_prob(p_s)) {
 			throw "ERROR: invalid probability";
 		}
@@ -551,7 +552,7 @@ public:
 		if (elit_ratio <= 0 || elit_ratio >= 1.0) {
 			throw "ERROR: invalid elit_n";
 		}
-		elit_num = (size_t)std::llround(elit_ratio * pop_coef * vsz);
+		elit_num = static_cast<size_t>(std::round(elit_ratio * pop_coef * vsz));
 		if (elit_num == pop_coef * vsz) {
 			--elit_num;
 		}
@@ -651,8 +652,10 @@ public:
 };
 
 std::ostream& operator<<(std::ostream& out, const GA_model_solver<>::Solution* soln) {
-	for (auto itr = soln->begin(), end = soln->end(); itr != end; ++itr) {
-		out << itr->first << ": " << itr->second << " ";
+	if (soln) {
+		for (auto itr = soln->begin(), end = soln->end(); itr != end; ++itr) {
+			out << itr->first << ": " << itr->second << " ";
+		}
 	}
 	return out;
 }
