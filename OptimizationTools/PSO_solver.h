@@ -52,7 +52,9 @@ protected:
 	std::vector<Particle*> particles;
 	std::vector<numeric_type> dec_var_values;
 	std::vector<Var_Traits_Internal> dec_var_traits;
-	size_t population_coef, max_iteration, disc_count;
+	size_t population_coef, max_iteration;
+	//CONSTRUCT ITERATION DEPENDENT var_min AND var_max (only for discrete variables)
+	std::unordered_map<size_t, numeric_type> var_min, var_max;
 	numeric_type inertial_weight, local_accelerator, global_accelerator,
 		disc_div_coef_not, lambda, div_metric_const, l_param;
 	//other parameters !!!!!!!
@@ -100,9 +102,7 @@ public:
 		size_t psz = population_coef * vsz;
 		particles.resize(psz);
 		size_t gbest = 0;
-		std::vector<numeric_type> var_min, var_max, disc_div_coef;
-		var_min.resize(vsz, std::numeric_limits<numeric_type>::max());
-		var_max.resize(vsz, -std::numeric_limits<numeric_type>::max());
+		std::vector<numeric_type> disc_div_coef;
 		disc_div_coef.resize(vsz);
 		numeric_type adjusted_var_min, adjusted_var_max;
 		//INITIALIZE THE PARTICLES RANDOMLY
@@ -114,8 +114,10 @@ public:
 			for (size_t j = 0; j < vsz; ++j) {
 				dec_var_values[j] = particles[i]->variables[j];
 				if (dec_var_traits[j].type == Var_Traits::DISC) {
-					var_min[j] = std::min(var_min[j], particles[i]->variables[j]);
-					var_max[j] = std::max(var_max[j], particles[i]->variables[j]);
+					numeric_type& var_min_j = var_min[j];
+					numeric_type& var_max_j = var_max[j];
+					var_min_j = std::min(var_min_j, particles[i]->variables[j]);
+					var_max_j = std::max(var_max_j, particles[i]->variables[j]);
 				}
 			}
 			particles[i]->obj_val = expression.value();
@@ -178,24 +180,27 @@ public:
 		}
 		//___START THE MAIN OPTIMIZATION LOOP___
 		for (size_t iteration = 0; iteration < max_iteration; ++iteration) {
-			//CALCULATE DIVERSITY METRICS
-			for (size_t i = 0; i < vsz; ++i) {
+			//CALCULATE DIVERSITY METRICS (only for discrete variables)
+			for (auto itr = var_min.begin(), end = var_min.end(); itr != end; ++itr) {
+				const size_t i = itr->first;
+				numeric_type& var_min_i = var_min[i];
+				numeric_type& var_max_i = var_max[i];
 				switch (dec_var_traits[i].type) {
 				case Var_Traits::DISC:
 					adjusted_var_min =
 						std::min(
-							var_max[i] - lambda * (var_max[i] - var_min[i]),
+							var_max_i - lambda * (var_max_i - var_min_i),
 							std::max(
-								particles[gbest]->pbest[i] - 0.5 * lambda * (var_max[i] - var_min[i]),
-								var_min[i]
+								particles[gbest]->pbest[i] - 0.5 * lambda * (var_max_i - var_min_i),
+								var_min_i
 							)
 						);
 					adjusted_var_max =
 						std::max(
-							var_min[i] + lambda * (var_max[i] - var_min[i]),
+							var_min_i + lambda * (var_max_i - var_min_i),
 							std::min(
-								particles[gbest]->pbest[i] + 0.5 * lambda * (var_max[i] - var_min[i]),
-								var_max[i]
+								particles[gbest]->pbest[i] + 0.5 * lambda * (var_max_i - var_min_i),
+								var_max_i
 							)
 						);
 					disc_div_coef[i] =
@@ -258,14 +263,20 @@ public:
 				}
 			}
 			//COMPUTE FITNESSES, DETERMINE pbest AND gbest, CONSTRAINT VIOLATIONS
-			std::fill(var_min.begin(), var_min.end(), std::numeric_limits<numeric_type>::max());
-			std::fill(var_max.begin(), var_max.end(), -std::numeric_limits<numeric_type>::max());
+			for (auto itr = var_min.begin(), end = var_min.end(); itr != end; ++itr) {
+				itr->second = std::numeric_limits<numeric_type>::max();
+			}
+			for (auto itr = var_max.begin(), end = var_max.end(); itr != end; ++itr) {
+				itr->second = -std::numeric_limits<numeric_type>::max();
+			}
 			for (size_t i = 0; i < psz; ++i) {
 				for (size_t j = 0; j < vsz; ++j) {
 					dec_var_values[j] = particles[i]->variables[j];
 					if (dec_var_traits[j].type == Var_Traits::DISC) {
-						var_min[j] = std::min(var_min[j], particles[i]->variables[j]);
-						var_max[j] = std::max(var_max[j], particles[i]->variables[j]);
+						numeric_type& var_min_j = var_min[j];
+						numeric_type& var_max_j = var_max[j];
+						var_min_j = std::min(var_min_j, particles[i]->variables[j]);
+						var_max_j = std::max(var_max_j, particles[i]->variables[j]);
 					}
 				}
 				particles[i]->obj_val = expression.value();
@@ -391,7 +402,6 @@ public:
 			throw "ERROR: invalid space interval number";
 		}
 		size_t i = 0;
-		disc_count = 0;
 		dec_var_values.resize(vsz);
 		for (auto itr = dec_vars.begin(), end = dec_vars.end(); itr != end; ++itr, ++i) {
 			if (symbol_table.add_variable(itr->first, dec_var_values[i]) == false) {
@@ -406,7 +416,8 @@ public:
 			if (var_traits.type == Var_Traits::DISC) {
 				var_traits.lower_bound = std::round(var_traits.lower_bound);
 				var_traits.upper_bound = std::round(var_traits.upper_bound);
-				++disc_count;
+				var_min[i] = std::numeric_limits<numeric_type>::max();
+				var_max[i] = -std::numeric_limits<numeric_type>::max();
 			}
 			if (var_traits.lower_bound >= var_traits.upper_bound) {
 				throw "ERROR: invalid lower/upper bounds";
