@@ -232,6 +232,7 @@ public:
 						global_accelerator * static_cast<numeric_type>(unif(gen)) *
 						(f_2t - particles[i]->variables[j]);
 					//UPDATE PARTICLE POSITIONS IN THE MEANTIME
+					particles[i]->prev_vars[j] = particles[i]->variables[j];
 					if (particles[i]->velocity[j] > (dec_var_traits[j].upper_bound - particles[i]->variables[j])) {
 						particles[i]->variables[j] = dec_var_traits[j].upper_bound;
 					}
@@ -305,18 +306,18 @@ public:
 				//UPDATE gbest IF NECESSARY
 				bool updateGbest = false;
 				if (particles[i]->constr_viol > 0.0) {	//CURRENT PARTICLE IS INFEASIBLE
-					if (particles[gbest]->constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
-						if (particles[i]->constr_viol < particles[gbest]->constr_viol) {
+					if (particles[gbest]->pbest_constr_viol> 0.0) {	//gbest PARTICLE IS INFEASIBLE
+						if (particles[i]->constr_viol < particles[gbest]->pbest_constr_viol) {
 							updateGbest = true;
 						}
 					}
 				}
 				else {	//CURRENT PARTICLE IS FEASIBLE
-					if (particles[gbest]->constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
+					if (particles[gbest]->pbest_constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
 						updateGbest = true;
 					}
 					else {	//gbest PARTICLE IS FEASIBLE
-						if (particles[gbest]->obj_val > particles[i]->obj_val) {
+						if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
 							updateGbest = true;
 						}
 					}
@@ -373,8 +374,8 @@ public:
 		this->div_metric_const = std::pow(
 			(psz + 1.0) / (psz * lambda + 1.0),
 			numeric_type{ 1.0 } / static_cast<numeric_type>(vsz));
-		this->l_param = (0.02) /
-			(std::pow(psz, 0.31) * std::pow(static_cast<numeric_type>(vsz), 0.58));
+		this->l_param = (0.91*0.51) /
+			(std::pow(psz, 0.21) * std::pow(static_cast<numeric_type>(vsz), 0.58));
 		if (max_iteration <= 10) {
 			throw "ERROR: too few iterations";
 		}
