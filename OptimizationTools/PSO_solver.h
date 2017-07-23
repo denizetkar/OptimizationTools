@@ -1,5 +1,6 @@
 #pragma once
 #include "exprtk.hpp"
+#include "prime/primesieve.hpp"
 #include<unordered_map>
 #include<string>
 #include<vector>
@@ -97,17 +98,54 @@ public:
 		return res;
 	}
 
+	numeric_type get_phi(size_t prime, size_t k) {
+		size_t prime_ = prime, k_ = k;
+		numeric_type phi = numeric_type{ 0.0 };
+		while (k_ > 0) {
+			phi += static_cast<numeric_type>(k_ % prime) / 
+				static_cast<numeric_type>(prime_);
+			k_ = k_ / prime;
+			prime_ *= prime;
+		}
+		return phi;
+	}
+
 	Solution* solve() {
 		size_t vsz = dec_var_values.size();
 		size_t psz = population_coef * vsz;
 		particles.resize(psz);
 		size_t gbest = 0;
 		std::vector<numeric_type> disc_div_coef;
+		std::vector<size_t> primes;
 		disc_div_coef.resize(vsz);
-		numeric_type adjusted_var_min, adjusted_var_max;
+		numeric_type adjusted_var_min, adjusted_var_max, 
+			_psz = static_cast<numeric_type>(psz);
 		//INITIALIZE THE PARTICLES RANDOMLY
+		primesieve::generate_n_primes(vsz - 1, &primes);
 		for (size_t i = 0; i < psz; ++i) {
-			particles[i] = get_particle(true);
+			Particle* res = new Particle;
+			res->variables.resize(vsz);
+			res->prev_vars.resize(vsz);
+			res->velocity.resize(vsz);
+			res->pbest.resize(vsz);
+			res->pbest_constr_viol = std::numeric_limits<numeric_type>::max();
+			res->pbest_obj_val = std::numeric_limits<numeric_type>::max();
+			numeric_type lb = dec_var_traits[0].lower_bound;
+			numeric_type ub = dec_var_traits[0].upper_bound;
+			res->variables[0] = lb + (ub - lb) * 
+				static_cast<numeric_type>(i) / _psz;
+			res->prev_vars[0] = lb + (ub - lb) * static_cast<numeric_type>(unif(gen));
+			res->velocity[0] = dec_var_traits[0].max_velocity * 
+				static_cast<numeric_type>(2.0 * unif(gen) - 1.0);
+			for (size_t j = 1; j < vsz; ++j) {
+				numeric_type lb = dec_var_traits[j].lower_bound;
+				numeric_type ub = dec_var_traits[j].upper_bound;
+				res->variables[j] = lb + (ub - lb) * get_phi(primes[j - 1], i);
+				res->prev_vars[j] = lb + (ub - lb) * static_cast<numeric_type>(unif(gen));
+				res->velocity[j] = dec_var_traits[j].max_velocity * 
+					static_cast<numeric_type>(2.0 * unif(gen) - 1.0);
+			}
+			particles[i] = res;
 		}
 		//COMPUTE FITNESSES, DETERMINE pbest AND gbest, CONSTRAINT VIOLATIONS
 		for (size_t i = 0; i < psz; ++i) {
