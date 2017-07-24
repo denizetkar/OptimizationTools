@@ -468,8 +468,6 @@ public:
 			if (var_traits.lower_bound >= var_traits.upper_bound) {
 				throw "ERROR: invalid lower/upper bounds";
 			}
-			var_traits.max_velocity =
-				(var_traits.upper_bound - var_traits.lower_bound) / space_intervals;
 		}
 		expression.register_symbol_table(symbol_table);
 		for (size_t i = 0, csz = constraints.size(); i < csz; ++i) {
