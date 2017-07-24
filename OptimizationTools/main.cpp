@@ -23,7 +23,7 @@ int main() {
 		traits2.upper_bound = 5.0;
 		std::unordered_map<std::string, PSO_solver<>::cont_type> params;
 		std::vector<std::string> constraints;
-		constraints.push_back("x <= y");
+		//constraints.push_back("x <= y");
 		PSO_solver<> solver{ equation, dec_vars, params, constraints };
 		PSO_solver<>::Solution* soln = solver.solve();
 

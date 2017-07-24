@@ -268,12 +268,13 @@ public:
 						static_cast<numeric_type>(norm(gen)) * sigma_kt + particles[i]->pbest[j];
 					numeric_type f_2t =
 						static_cast<numeric_type>(norm(gen)) * sigma_kt + particles[gbest]->pbest[j];
-					particles[i]->velocity[j] =
+					particles[i]->velocity[j] = std::min(
 						inertial_weight * particles[i]->velocity[j] +
 						local_accelerator * static_cast<numeric_type>(unif(gen)) *
 						(f_1t - particles[i]->variables[j]) +
 						global_accelerator * static_cast<numeric_type>(unif(gen)) *
-						(f_2t - particles[i]->variables[j]);
+						(f_2t - particles[i]->variables[j]), 
+						dec_var_traits[j].max_velocity);
 					//UPDATE PARTICLE POSITIONS IN THE MEANTIME
 					particles[i]->prev_vars[j] = particles[i]->variables[j];
 					if (particles[i]->velocity[j] > (dec_var_traits[j].upper_bound - particles[i]->variables[j])) {
@@ -456,6 +457,13 @@ public:
 				var_traits.upper_bound = std::round(var_traits.upper_bound);
 				var_min[i] = std::numeric_limits<numeric_type>::max();
 				var_max[i] = -std::numeric_limits<numeric_type>::max();
+				var_traits.max_velocity = std::max(
+					(var_traits.upper_bound - var_traits.lower_bound) / space_intervals, 
+					numeric_type{ 0.5 });
+			}
+			else {
+				var_traits.max_velocity =
+					(var_traits.upper_bound - var_traits.lower_bound) / space_intervals;
 			}
 			if (var_traits.lower_bound >= var_traits.upper_bound) {
 				throw "ERROR: invalid lower/upper bounds";
