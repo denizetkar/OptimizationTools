@@ -1,0 +1,269 @@
+import itertools
+
+
+def psieve():
+    yield from (2, 3, 5, 7)
+    D = {}
+    ps = psieve()
+    next(ps)
+    p = next(ps)
+    assert p == 3
+    psq = p*p
+    for i in itertools.count(9, 2):
+        if i in D:      # composite
+            step = D.pop(i)
+        elif i < psq:   # prime
+            yield i
+            continue
+        else:           # composite, = p*p
+            assert i == psq
+            step = 2*p
+            p = next(ps)
+            psq = p*p
+        i += step
+        while i in D:
+            i += step
+        D[i] = step
+
+#________________________________________________________________________________
+
+import itertools
+
+
+def eratosthenes( ):
+    '''Yields the sequence of prime numbers via the Sieve of Eratosthenes.'''
+    D = {}  # map each composite integer to its first-found prime factor
+    for q in itertools.count(2):     # q gets 2, 3, 4, 5, ... ad infinitum
+        p = D.pop(q, None)
+        if p is None:
+            # q not a key in D, so q is prime, therefore, yield it
+            yield q
+            # mark q squared as not-prime (with q as first-found prime factor)
+            D[q*q] = q
+        else:
+            # let x <- smallest (N*p)+q which wasn't yet known to be composite
+            # we just learned x is composite, with p first-found prime factor,
+            # since p is the first-found prime factor of q -- find and mark it
+            x = p + q
+            while x in D:
+                x += p
+            D[x] = p
+
+#________________________________________________________________________________
+
+from itertools import accumulate, chain, cycle, count
+
+
+def wsieve_willness():  # wheel-sieve, by Will Ness.    ideone.com/mqO25A
+    wh11 = [2, 4, 2, 4, 6, 2, 6, 4, 2,  4, 6,  6,
+            2, 6, 4, 2, 6, 4, 6, 8, 4,  2, 4,  2,
+            4, 8, 6, 4, 6, 2, 4, 6, 2,  6, 6,  4,
+            2, 4, 6, 2, 6, 4, 2, 4, 2, 10, 2, 10]
+    cs = accumulate(chain([11], cycle(wh11)))
+    yield(next(cs))       # cf. ideone.com/WFv4f,
+    ps = wsieve_willness()         # codereview.stackexchange.com/q/92365/9064
+    p = next(ps)          # 11
+    psq = p**2            # 121
+    D = dict(zip(accumulate(chain([0], wh11)), count(0)))   # start from
+    mults = {}
+    for c in cs:          # candidates, coprime with 210, from 11
+        if c in mults:
+            wheel = mults.pop(c)
+        elif c < psq:
+            yield c
+            continue
+        else:    # c==psq:  map (p*) (roll wh from p) = roll (wh*p) from (p*p)
+            i = D[(p-11) % 210]
+            wheel = accumulate(
+                chain([psq], cycle([p*d for d in wh11[i:] + wh11[:i]])))
+            next(wheel)
+            p = next(ps)
+            psq = p**2
+        for m in wheel:   # pop, save in m, and advance
+            if m not in mults:
+                break
+        mults[m] = wheel  # mults[143] = wheel@187
+
+
+def primes_willness():
+    yield from (2, 3, 5, 7)
+    yield from wsieve_willness()
+
+#________________________________________________________________________________
+
+from itertools import cycle
+
+CIRCUMFERENCE = 2*3*5*7
+BASE_PRIMES = (2,3,5,7)
+NEXT_PRIME = 11
+
+
+def wheel_slow(start):
+    result = []
+    i = start
+    for j in range(i + 1, i + 1 + CIRCUMFERENCE):
+        if all(j % k for k in BASE_PRIMES):
+            result.append(j - i)
+            i = j
+    return result
+
+
+def wheel():
+    return [10, 2, 4, 2, 4, 6, 2, 6, 4, 2, 4, 6, 6, 2, 6, 4,
+            2, 6, 4, 6, 8, 4, 2, 4, 2, 4, 8, 6, 4, 6, 2, 4,
+            6, 2, 6, 6, 4, 2, 4, 6, 2, 6, 4, 2, 4, 2, 10, 2]
+
+
+def shift(l, n):
+    return l[n:] + l[:n]
+
+
+def rotated_wheels():
+    result = {}
+    i = j = 1
+    result[i] = wheel()
+    i = i + result[i][0]
+    while i < CIRCUMFERENCE:
+        result[i] = shift(result[j], 1)
+        i, j = i + result[i][0], i
+    return result
+
+
+def primes():
+    yield from BASE_PRIMES
+    yield from wsieve()
+
+
+def wsieve(wheels=rotated_wheels()):
+    yield NEXT_PRIME
+    mults = {}
+    ps = wsieve()
+    p = next(ps)
+    psq, c = p*p, p
+    cwheel = cycle(wheels[c])
+    for step in cwheel:
+        c += step
+        if c in mults:
+            (mwheel, pbase) = mults.pop(c)
+        elif c < psq:
+            yield c
+            continue
+        else:          # (c==psq)
+            mwheel = cycle(wheels[p % CIRCUMFERENCE])
+            pbase = p
+            p = next(ps) ; psq = p*p
+        m = c
+        for mstep in mwheel:
+            m += pbase * mstep
+            if m not in mults:
+                break
+        mults[m] = (mwheel, pbase)
+
+#________________________________________________________________________________
+
+index = 0
+plist_t = []
+primes_gen = psieve()
+for prime in primes_gen:
+    index += 1
+    plist_t.append(prime)
+    if index == 100:
+        break
+
+index = 0
+plist = []
+primes_gen = primes()
+for prime in primes_gen:
+    index += 1
+    plist.append(prime)
+    if index == 100:
+        break
+
+assert plist == plist_t
+
+print(plist)
+
+#________________________________________________________________________________
+
+import timeit
+
+s = """\
+i = 0
+primes_gen = primes()
+for prime in primes_gen:
+    i += 1
+    if i == 100:
+        break
+"""
+print(timeit.timeit(stmt=s, number=1, globals=globals()))
+
+#________________________________________________________________________________
+
+from six import moves
+import numpy as np
+import matplotlib.pyplot as pylab
+
+# this list of primes allows up to a size 120 vector
+saved_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
+                59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137,
+                139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
+                227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
+                311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397,
+                401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487,
+                491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593,
+                599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659]
+
+
+def get_phi(p, k):
+    p_ = p
+    k_ = k
+    phi = 0
+    while k_ > 0:
+        a = k_ % p
+        phi += a / p_
+        k_ = int(k_ / p)
+        p_ *= p
+    return phi
+
+
+def generate_hammersley(n_dims=2, n_points=100):
+    primes_gen = primes()
+    primes_list = []
+    for d in moves.range(n_dims - 1):
+        primes_list.append(next(primes_gen))
+    for k in moves.range(n_points):
+        points = [k / n_points]
+        for d in moves.range(n_dims - 1):
+            points.append(get_phi(primes_list[d], k))
+        yield points
+
+
+def generate_halton(n_dims=2, n_points=100, primes=None):
+    primes = primes if primes is not None else saved_primes
+    for k in moves.range(n_points):
+        points = [get_phi(primes[d], k) for d in moves.range(n_dims)]
+        yield points
+
+
+def generate_uniform_points(n_dims=2, n_points=100):
+    for k in moves.range(n_points):
+        points = [np.random.uniform() for d in moves.range(n_dims)]
+        yield points
+
+gen = generate_hammersley(n_points=200)
+points = []
+for g in gen:
+    points.append(g)
+points = np.array(points)
+fig, ax = pylab.subplots(figsize=(7,7))
+ax.scatter(points[:,0], points[:,1], s=20, c='k'); ax.set_xlim(0,1); ax.set_ylim(0,1);
+
+gen = generate_uniform_points(n_points=200)
+points = []
+for g in gen:
+    points.append(g)
+points = np.array(points)
+fig2, ax2 = pylab.subplots(figsize=(7,7))
+ax2.scatter(points[:,0], points[:,1], s=20, c='k'); ax2.set_xlim(0,1); ax2.set_ylim(0,1);
+pylab.show()
+i = 0

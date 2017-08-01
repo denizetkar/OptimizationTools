@@ -11,7 +11,10 @@
 int main() {
 
 	{
-		std::string equation = "100*(y-x^2)^2+(1-x)^2";
+		//rosenbrock's (global minimum at 1,1)
+		//std::string equation = "100*(y-x^2)^2+(1-x)^2";
+		//rastrigin's (global minimum at 0,0)
+		std::string equation = "20+(x^2-10*cos(2*pi*x))+(y^2-10*cos(2*pi*y))";
 		std::unordered_map<std::string, PSO_solver<>::Var_Traits> dec_vars;
 		auto& traits = dec_vars["x"];
 		traits.type = traits.CONT;
