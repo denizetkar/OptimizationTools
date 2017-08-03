@@ -582,7 +582,7 @@ public:
 			size_t sz = constraints[i].size();
 			bool isValid = false;
 			if (sz) --sz;
-			for (size_t j = 0; i < sz; ++j) {
+			for (size_t j = 0; j < sz; ++j) {
 				if (constraints[i][j] == '>') {
 					isValid = true;
 					if (constraints[i][j + 1] == '=') {

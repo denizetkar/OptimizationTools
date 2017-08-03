@@ -62,6 +62,7 @@ protected:
 public:
 	using cont_type = numeric_type;
 	using disc_type = discrete_type;
+	using Hint = std::unordered_map<std::string, numeric_type>;
 	struct Solution {
 		std::unordered_map<std::string, numeric_type> solution;
 		numeric_type obj_val;
@@ -76,6 +77,39 @@ public:
 			return out;
 		}
 	};
+
+	void hint(const Hint& _hint) {
+		Particle* res = new Particle;
+		size_t vsz = dec_var_traits.size();
+		bool hintFound = false;
+		res->variables.resize(vsz);
+		res->prev_vars.resize(vsz);
+		res->velocity.resize(vsz);
+		res->pbest.resize(vsz);
+		res->pbest_constr_viol = std::numeric_limits<numeric_type>::max();
+		res->pbest_obj_val = std::numeric_limits<numeric_type>::max();
+		for (size_t i = 0; i < vsz; ++i) {
+			numeric_type lb = dec_var_traits[i].lower_bound;
+			numeric_type ub = dec_var_traits[i].upper_bound;
+			res->prev_vars[i] = lb + (ub - lb) * static_cast<numeric_type>(unif(gen));
+			res->velocity[i] = dec_var_traits[i].max_velocity *
+				static_cast<numeric_type>(2.0 * unif(gen) - 1.0);
+			auto var_search = _hint.find(dec_var_traits[i].name);
+			if (var_search != _hint.end() && particles.empty()) {
+				hintFound = true;
+				res->variables[i] = var_search->second;
+			}
+			else {
+				res->variables[i] = lb + (ub - lb) * static_cast<numeric_type>(unif(gen));
+			}
+		}
+		if (hintFound) {
+			particles.push_back(res);
+			return;
+		}
+		//IF REACHED HERE THEN NO HINT EXISTS
+		delete res;
+	}
 
 	Particle* get_particle(bool isRandom = false) {
 		Particle* res = new Particle;
@@ -475,7 +509,7 @@ public:
 			size_t sz = constraints[i].size();
 			bool isValid = false;
 			if (sz) --sz;
-			for (size_t j = 0; i < sz; ++j) {
+			for (size_t j = 0; j < sz; ++j) {
 				if (constraints[i][j] == '>') {
 					isValid = true;
 					if (constraints[i][j + 1] == '=') {
