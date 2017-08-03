@@ -147,7 +147,7 @@ public:
 	Solution* solve() {
 		size_t vsz = dec_var_values.size();
 		size_t psz = population_coef * vsz;
-		particles.resize(psz);
+		particles.resize(psz, nullptr);
 		size_t gbest = 0;
 		std::vector<numeric_type> disc_div_coef;
 		std::vector<size_t> primes;
@@ -156,7 +156,7 @@ public:
 			_psz = static_cast<numeric_type>(psz);
 		//INITIALIZE THE PARTICLES RANDOMLY
 		primesieve::generate_n_primes(vsz - 1, &primes);
-		for (size_t i = 0; i < psz; ++i) {
+		for (size_t i = (particles[0]==nullptr?0:1); i < psz; ++i) {
 			Particle* res = new Particle;
 			res->variables.resize(vsz);
 			res->prev_vars.resize(vsz);
@@ -184,19 +184,35 @@ public:
 		//COMPUTE FITNESSES, DETERMINE pbest AND gbest, CONSTRAINT VIOLATIONS
 		for (size_t i = 0; i < psz; ++i) {
 			for (size_t j = 0; j < vsz; ++j) {
-				dec_var_values[j] = particles[i]->variables[j];
 				if (dec_var_traits[j].type == Var_Traits::DISC) {
 					numeric_type& var_min_j = var_min[j];
 					numeric_type& var_max_j = var_max[j];
 					var_min_j = std::min(var_min_j, particles[i]->variables[j]);
 					var_max_j = std::max(var_max_j, particles[i]->variables[j]);
+					if (static_cast<numeric_type>(unif(gen)) <= disc_div_coef[j]) {
+						if (unif(gen) <= 0.5) {
+							particles[i]->variables[j] = std::floor(particles[i]->variables[j]);
+						}
+						else {
+							particles[i]->variables[j] = std::ceil(particles[i]->variables[j]);
+						}
+					}
+					else {
+						particles[i]->variables[j] = std::round(particles[i]->variables[j]);
+					}
 				}
+				dec_var_values[j] = particles[i]->variables[j];
 			}
-			particles[i]->obj_val = expression.value();
+			if (std::isnan(particles[i]->obj_val = expression.value())) {
+				particles[i]->obj_val = std::numeric_limits<numeric_type>::max();
+			}
 			//CALCULATE CONSTRAINT VIOLATION
 			particles[i]->constr_viol = numeric_type{ 0.0 };
 			for (size_t j = 0, consz = constraint_expressions.size(); j < consz; ++j) {
 				numeric_type cons_val = constraint_expressions[j].value();
+				if (std::isnan(cons_val)) {
+					cons_val = std::numeric_limits<numeric_type>::max();
+				}
 				if (cons_val > 0.0) {	//CONSTRAINT VIOLATED!!!
 					particles[i]->constr_viol += cons_val;
 				}
@@ -207,6 +223,11 @@ public:
 				if (particles[i]->pbest_constr_viol > 0.0) {	//pbest PARTICLE IS INFEASIBLE
 					if (particles[i]->constr_viol < particles[i]->pbest_constr_viol) {
 						updatePbest = true;
+					}
+					else if (particles[i]->constr_viol == particles[i]->pbest_constr_viol) {
+						if (particles[i]->pbest_obj_val > particles[i]->obj_val) {
+							updatePbest = true;
+						}
 					}
 				}
 			}
@@ -230,18 +251,23 @@ public:
 			//UPDATE gbest IF NECESSARY
 			bool updateGbest = false;
 			if (particles[i]->constr_viol > 0.0) {	//CURRENT PARTICLE IS INFEASIBLE
-				if (particles[gbest]->constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
-					if (particles[i]->constr_viol < particles[gbest]->constr_viol) {
+				if (particles[gbest]->pbest_constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
+					if (particles[i]->constr_viol < particles[gbest]->pbest_constr_viol) {
 						updateGbest = true;
+					}
+					else if (particles[i]->constr_viol == particles[gbest]->pbest_constr_viol) {
+						if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
+							updateGbest = true;
+						}
 					}
 				}
 			}
 			else {	//CURRENT PARTICLE IS FEASIBLE
-				if (particles[gbest]->constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
+				if (particles[gbest]->pbest_constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
 					updateGbest = true;
 				}
 				else {	//gbest PARTICLE IS FEASIBLE
-					if (particles[gbest]->obj_val > particles[i]->obj_val) {
+					if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
 						updateGbest = true;
 					}
 				}
@@ -352,11 +378,16 @@ public:
 						var_max_j = std::max(var_max_j, particles[i]->variables[j]);
 					}
 				}
-				particles[i]->obj_val = expression.value();
+				if (std::isnan(particles[i]->obj_val = expression.value())) {
+					particles[i]->obj_val = std::numeric_limits<numeric_type>::max();
+				}
 				//CALCULATE CONSTRAINT VIOLATION
 				particles[i]->constr_viol = numeric_type{ 0.0 };
 				for (size_t j = 0, consz = constraint_expressions.size(); j < consz; ++j) {
 					numeric_type cons_val = constraint_expressions[j].value();
+					if (std::isnan(cons_val)) {
+						cons_val = std::numeric_limits<numeric_type>::max();
+					}
 					if (cons_val > 0.0) {	//CONSTRAINT VIOLATED!!!
 						particles[i]->constr_viol += cons_val;
 					}
@@ -367,6 +398,11 @@ public:
 					if (particles[i]->pbest_constr_viol > 0.0) {	//pbest PARTICLE IS INFEASIBLE
 						if (particles[i]->constr_viol < particles[i]->pbest_constr_viol) {
 							updatePbest = true;
+						}
+						else if (particles[i]->constr_viol == particles[i]->pbest_constr_viol) {
+							if (particles[i]->pbest_obj_val > particles[i]->obj_val) {
+								updatePbest = true;
+							}
 						}
 					}
 				}
@@ -394,6 +430,11 @@ public:
 						if (particles[i]->constr_viol < particles[gbest]->pbest_constr_viol) {
 							updateGbest = true;
 						}
+						else if (particles[i]->constr_viol == particles[gbest]->pbest_constr_viol) {
+							if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
+								updateGbest = true;
+							}
+						}
 					}
 				}
 				else {	//CURRENT PARTICLE IS FEASIBLE
@@ -415,9 +456,9 @@ public:
 		Solution* res = new Solution;
 		Particle* source = particles[gbest];
 		for (size_t i = 0; i < vsz; ++i) {
-			res->solution[dec_var_traits[i].name] = source->variables[i];
+			res->solution[dec_var_traits[i].name] = source->pbest[i];
 		}
-		res->obj_val = source->obj_val;
+		res->obj_val = source->pbest_obj_val;
 		for (size_t i = 0; i < psz; ++i) {
 			delete particles[i];
 		}

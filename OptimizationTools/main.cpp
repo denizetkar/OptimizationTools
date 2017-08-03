@@ -114,27 +114,27 @@ int main() {
 		//d2 = 250*(95*y12+157*y22+46*y32+234*y42+75*y52+192*y62)
 		//d3 = 250*(95*(1-y11-y12)+157*(1-y21-y22)+46*(1-y31-y32)+234*(1-y41-y42)+75*(1-y51-y52)+192*(1-y61-y62))
 		PSO_solver<> solver{ equation, dec_vars, params, constraints, 
-		0.5, 1.4, 1.4, 0.7, 0.2, 100, 1000 };
+		0.5, 1.4, 1.4, 0.7, 0.2, 100, 500 };
 		PSO_solver<>::Hint hint;
-		hint["x1"] = 0;
-		hint["x2"] = 0;
+		hint["x1"] = 1;
+		hint["x2"] = 1;
 		hint["x3"] = 1;
-		hint["y11"] = 0;
-		hint["y12"] = 1;
-		hint["y21"] = 0;
-		hint["y22"] = 1;
+		hint["y11"] = 1;
+		hint["y12"] = 0;
+		hint["y21"] = 1;
+		hint["y22"] = 0;
 		hint["y31"] = 0;
-		hint["y32"] = 0;
-		hint["y41"] = 1;
+		hint["y32"] = 1;
+		hint["y41"] = 0;
 		hint["y42"] = 1;
-		hint["y51"] = 1;
+		hint["y51"] = 0;
 		hint["y52"] = 0;
 		hint["y61"] = 0;
-		hint["y62"] = 1;
-		hint["n1"] = 873.699;
-		hint["n2"] = 5108.58;
-		hint["n3"] = 519.966;
-		solver.hint(hint);
+		hint["y62"] = 0;
+		hint["n1"] = 19.4296;
+		hint["n2"] = 20.4837;
+		hint["n3"] = 19.9985;
+		//solver.hint(hint);
 		PSO_solver<>::Solution* soln = solver.solve();
 
 		std::cout << soln << std::endl;

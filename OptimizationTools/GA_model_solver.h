@@ -300,13 +300,19 @@ private:
 				dec_var_values[j] = x;
 				gene_avgs[j] += (x - gene_avgs[j]) / (i + 1);
 			}
-			if (fitness_max < (population[i]->fitness = static_cast<f_type>(expression.value()))) {
+			if (std::isnan(population[i]->fitness = static_cast<f_type>(expression.value()))) {
+				population[i]->fitness = -std::numeric_limits<numeric_type>::max();
+			}
+			if (fitness_max < population[i]->fitness) {
 				fitness_max = population[i]->fitness;
 			}
 			((Individual_ext*)population[i])->cons_viol = 0.0;
 			((Individual_ext*)population[i])->num_of_cons_viol = 0;
 			for (size_t j = 0, consz = constraint_expressions.size(); j < consz; ++j) {
 				numeric_type cons_val = constraint_expressions[j].value();
+				if (std::isnan(cons_val)) {
+					cons_val = -std::numeric_limits<numeric_type>::max();
+				}
 				if (cons_val > 0.0) {	//CONSTRAINT VIOLATED!!!
 					++((Individual_ext*)population[i])->num_of_cons_viol;
 					((Individual_ext*)population[i])->cons_viol += cons_val;
@@ -490,7 +496,10 @@ public:
 					}
 					dec_var_values[j] = x;
 				}
-				if (fitness_max < (population[i]->fitness = static_cast<f_type>(expression.value()))) {
+				if (std::isnan(population[i]->fitness = static_cast<f_type>(expression.value()))) {
+					population[i]->fitness = -std::numeric_limits<numeric_type>::max();
+				}
+				if (fitness_max < population[i]->fitness) {
 					fitness_max = population[i]->fitness;
 					fit_max_index = i;
 				}
