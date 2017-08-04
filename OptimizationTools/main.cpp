@@ -16,124 +16,101 @@ int main() {
 		//rastrigin's (global minimum at 0,0)
 		//std::string equation = "20+(x^2-10*cos(2*pi*x))+(y^2-10*cos(2*pi*y))";
 		
-		std::string equation = "100*(x1+x2+x3) + 0.01*250*(95*(0.04*y11+2*y12+2.88*(1-y11-y12)) + 157*(0.08*y21+1.36*y22+1.32*(1-y21-y22)) + 46*(0.36*y31+0.08*y32+1.04*(1-y31-y32)) + 234*(0.88*y41+0.1*y42+0.52*(1-y41-y42)) + 75*(1.52*y51+1.8*y52+0.12*(1-y51-y52)) + 192*(3.36*y61+2.28*y62+0.08*(1-y61-y62))) + x1*(10*n1+0.01*(1.3+(0.24*(250*(95*y11+157*y21+46*y31+234*y41+75*y51+192*y61))/n1))*n1+(0.06*(250*(95*y11+157*y21+46*y31+234*y41+75*y51+192*y61))/n1))+x2*(10*n2+0.01*(1+(0.2*(250*(95*y12+157*y22+46*y32+234*y42+75*y52+192*y62))/n2))*n2+(0.06*(250*(95*y12+157*y22+46*y32+234*y42+75*y52+192*y62))/n2))+x3*(10*n3+0.01*(1.4+(0.28*(250*(95*(1-y11-y12)+157*(1-y21-y22)+46*(1-y31-y32)+234*(1-y41-y42)+75*(1-y51-y52)+192*(1-y61-y62)))/n3))*n3+(0.06*(250*(95*(1-y11-y12)+157*(1-y21-y22)+46*(1-y31-y32)+234*(1-y41-y42)+75*(1-y51-y52)+192*(1-y61-y62)))/n3)) + 0.2352*((7*y11*900+7*y21*2500+7*y31*625+7*y41*6400+7*y51*625+7*y61*6400)^0.5+(7*y12*900+7*y22*2500+7*y32*625+7*y42*6400+7*y52*625+7*y62*6400)^0.5+(7*(1-y11-y12)*900+7*(1-y21-y22)*2500+7*(1-y31-y32)*625+7*(1-y41-y42)*6400+7*(1-y51-y52)*625+7*(1-y61-y62)*6400)^0.5)";
+		std::string equation = "(0.05*(3*x11+2*x21+d1^2+d2^3+1-2*1) + 0.175*(3*x12+2*x22+d1^2+d2^3+3-2*1) + 0.025*(3*x13+2*x23+d1^2+d2^3+5-2*1) + 0.1*(3*x14+2*x24+d1^2+d2^3+1-2*3) + 0.35*(3*x15+2*x25+d1^2+d2^3+3-2*3) + 0.05*(3*x16+2*x26+d1^2+d2^3+5-2*3) + 0.05*(3*x17+2*x27+d1^2+d2^3+1-2*5) + 0.175*(3*x18+2*x28+d1^2+d2^3+3-2*5) + 0.025*(3*x19+2*x29+d1^2+d2^3+5-2*5))";
 		std::unordered_map<std::string, PSO_solver<>::Var_Traits> dec_vars;
-		dec_vars["x1"] = PSO_solver<>::Var_Traits{ 
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["x2"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["x3"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y11"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y12"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		//dec_vars["y13"] = PSO_solver<>::Var_Traits{
-		//	0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y21"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y22"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		//dec_vars["y23"] = PSO_solver<>::Var_Traits{
-		//	0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y31"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y32"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		//dec_vars["y33"] = PSO_solver<>::Var_Traits{
-		//	0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y41"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y42"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		//dec_vars["y43"] = PSO_solver<>::Var_Traits{
-		//	0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y51"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y52"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		//dec_vars["y53"] = PSO_solver<>::Var_Traits{
-		//	0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y61"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["y62"] = PSO_solver<>::Var_Traits{
-			0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		//dec_vars["y63"] = PSO_solver<>::Var_Traits{
-		//	0.0, 1.0, PSO_solver<>::Var_Traits::DISC };
-		dec_vars["n1"] = PSO_solver<>::Var_Traits{
-			0.0, 10000.0, PSO_solver<>::Var_Traits::CONT };
-		dec_vars["n2"] = PSO_solver<>::Var_Traits{
-			0.0, 10000.0, PSO_solver<>::Var_Traits::CONT };
-		dec_vars["n3"] = PSO_solver<>::Var_Traits{
-			0.0, 10000.0, PSO_solver<>::Var_Traits::CONT };
-		//dec_vars["d1"] = PSO_solver<>::Var_Traits{
-		//	0.0, 10000.0, PSO_solver<>::Var_Traits::CONT };
-		//dec_vars["d2"] = PSO_solver<>::Var_Traits{
-		//	0.0, 10000.0, PSO_solver<>::Var_Traits::CONT };
-		//dec_vars["d3"] = PSO_solver<>::Var_Traits{
-		//	0.0, 10000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x11"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x12"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x13"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x14"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x15"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x16"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x17"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x18"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x19"] = PSO_solver<>::Var_Traits{
+			0.0, 10.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x21"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x22"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x23"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x24"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x25"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x26"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x27"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x28"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["x29"] = PSO_solver<>::Var_Traits{
+			-1000.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["d1"] = PSO_solver<>::Var_Traits{
+			0.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
+		dec_vars["d2"] = PSO_solver<>::Var_Traits{
+			0.0, 1000.0, PSO_solver<>::Var_Traits::CONT };
 		std::unordered_map<std::string, PSO_solver<>::cont_type> params;
 		std::vector<std::string> constraints;
 		//constraints.push_back("x <= y");
-		//constraints.push_back("y11+y12+y13 == 1");
-		//constraints.push_back("y21+y22+y23 == 1");
-		//constraints.push_back("y31+y32+y33 == 1");
-		//constraints.push_back("y41+y42+y43 == 1");
-		//constraints.push_back("y51+y52+y53 == 1");
-		//constraints.push_back("y61+y62+y63 == 1");
-		constraints.push_back("y11 < x1");
-		constraints.push_back("y21 < x1");
-		constraints.push_back("y31 < x1");
-		constraints.push_back("y41 < x1");
-		constraints.push_back("y51 < x1");
-		constraints.push_back("y61 < x1");
-		constraints.push_back("y12 < x2");
-		constraints.push_back("y22 < x2");
-		constraints.push_back("y32 < x2");
-		constraints.push_back("y42 < x2");
-		constraints.push_back("y52 < x2");
-		constraints.push_back("y62 < x2");
-		constraints.push_back("(1-y11-y12) < x3");
-		constraints.push_back("(1-y21-y22) < x3");
-		constraints.push_back("(1-y31-y32) < x3");
-		constraints.push_back("(1-y41-y42) < x3");
-		constraints.push_back("(1-y51-y52) < x3");
-		constraints.push_back("(1-y61-y62) < x3");
-		//constraints.push_back("d1 == 250*(95*y11+157*y21+46*y31+234*y41+75*y51+192*y61)");
-		//constraints.push_back("d2 == 250*(95*y12+157*y22+46*y32+234*y42+75*y52+192*y62)");
-		//constraints.push_back("d3 == 250*(95*(1-y11-y12)+157*(1-y21-y22)+46*(1-y31-y32)+234*(1-y41-y42)+75*(1-y51-y52)+192*(1-y61-y62))");
-		
-		//EQUIVALENTLY
-		//y13 = 1-y11-y12
-		//y23 = 1-y21-y22
-		//y33 = 1-y31-y32
-		//y43 = 1-y41-y42
-		//y53 = 1-y51-y52
-		//y63 = 1-y61-y62
-		//d1 = 250*(95*y11+157*y21+46*y31+234*y41+75*y51+192*y61)
-		//d2 = 250*(95*y12+157*y22+46*y32+234*y42+75*y52+192*y62)
-		//d3 = 250*(95*(1-y11-y12)+157*(1-y21-y22)+46*(1-y31-y32)+234*(1-y41-y42)+75*(1-y51-y52)+192*(1-y61-y62))
+		constraints.push_back("d1 > 2*(x11+x21)-1");
+		constraints.push_back("d1 > 2*(x12+x22)-1");
+		constraints.push_back("d1 > 2*(x13+x23)-1");
+		constraints.push_back("d1 > 2*(x14+x24)-3");
+		constraints.push_back("d1 > 2*(x15+x25)-3");
+		constraints.push_back("d1 > 2*(x16+x26)-3");
+		constraints.push_back("d1 > 2*(x17+x27)-5");
+		constraints.push_back("d1 > 2*(x18+x28)-5");
+		constraints.push_back("d1 > 2*(x19+x29)-5");
+		constraints.push_back("d2 > 1/x11+2*x21^2+2*1+0.5*1");
+		constraints.push_back("d2 > 1/x12+2*x22^2+2*3+0.5*1");
+		constraints.push_back("d2 > 1/x13+2*x23^2+2*5+0.5*1");
+		constraints.push_back("d2 > 1/x14+2*x24^2+2*1+0.5*3");
+		constraints.push_back("d2 > 1/x15+2*x25^2+2*3+0.5*3");
+		constraints.push_back("d2 > 1/x16+2*x26^2+2*5+0.5*3");
+		constraints.push_back("d2 > 1/x17+2*x27^2+2*1+0.5*5");
+		constraints.push_back("d2 > 1/x18+2*x28^2+2*3+0.5*5");
+		constraints.push_back("d2 > 1/x19+2*x29^2+2*5+0.5*5");
+		constraints.push_back("x11^2+2*x21 < 30");
+		constraints.push_back("x12^2+2*x22 < 30");
+		constraints.push_back("x13^2+2*x23 < 30");
+		constraints.push_back("x14^2+2*x24 < 30");
+		constraints.push_back("x15^2+2*x25 < 30");
+		constraints.push_back("x16^2+2*x26 < 30");
+		constraints.push_back("x17^2+2*x27 < 30");
+		constraints.push_back("x18^2+2*x28 < 30");
+		constraints.push_back("x19^2+2*x29 < 30");
 		PSO_solver<> solver{ equation, dec_vars, params, constraints, 
-		0.5, 1.4, 1.4, 0.7, 0.2, 100, 500 };
+			0.5, 1.4, 1.4, 0.1, 1.0e-10, 0.7, 0.2, 100, 500 };
 		PSO_solver<>::Hint hint;
-		hint["x1"] = 1;
-		hint["x2"] = 1;
-		hint["x3"] = 1;
-		hint["y11"] = 1;
-		hint["y12"] = 0;
-		hint["y21"] = 1;
-		hint["y22"] = 0;
-		hint["y31"] = 0;
-		hint["y32"] = 1;
-		hint["y41"] = 0;
-		hint["y42"] = 1;
-		hint["y51"] = 0;
-		hint["y52"] = 0;
-		hint["y61"] = 0;
-		hint["y62"] = 0;
-		hint["n1"] = 19.4296;
-		hint["n2"] = 20.4837;
-		hint["n3"] = 19.9985;
+		hint["x11"] = 0.299645;
+		hint["x24"] = -1.75135;
+		hint["x19"] = 4.89214;
+		hint["x12"] = 0.359591;
+		hint["x13"] = 0.59274;
+		hint["x29"] = -0.0109772;
+		hint["x14"] = 0.325731;
+		hint["x28"] = -0.955697;
+		hint["x15"] = 0.38244;
+		hint["x16"] = 0.893842;
+		hint["x17"] = 0.324952;
+		hint["x18"] = 0.420533;
+		hint["x25"] = -1.13795;
+		hint["x21"] = -1.85302;
+		hint["x22"] = -1.30838;
+		hint["x23"] = -0.508464;
+		hint["x26"] = -0.207214;
+		hint["x27"] = -1.60109;
+		hint["d1"] = 4.76333;
+		hint["d2"] = 12.7057;
 		//solver.hint(hint);
 		PSO_solver<>::Solution* soln = solver.solve();
 

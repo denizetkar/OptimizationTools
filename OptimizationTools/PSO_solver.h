@@ -19,6 +19,8 @@ static std::normal_distribution<double> norm{};
 template <typename numeric_type = double, typename discrete_type = long long>
 class PSO_solver {
 protected:
+	//using numeric_type = double;
+	//using discrete_type = long long;
 	struct Particle {
 		std::vector<numeric_type> variables;
 		std::vector<numeric_type> prev_vars;
@@ -54,9 +56,10 @@ protected:
 	std::vector<numeric_type> dec_var_values;
 	std::vector<Var_Traits_Internal> dec_var_traits;
 	size_t population_coef, max_iteration;
-	//CONSTRUCT ITERATION DEPENDENT var_min AND var_max (only for discrete variables)
-	std::unordered_map<size_t, numeric_type> var_min, var_max;
+	//CONSTRUCT ITERATION DEPENDENT var_min AND var_max (only for discrete variables(deprecated))
+	std::vector<numeric_type> var_min, var_max;
 	numeric_type inertial_weight, local_accelerator, global_accelerator,
+		cont_div_coef_not, cont_div_coef_min, cont_div_metrix_exp,
 		disc_div_coef_not, lambda, div_metric_const, l_param;
 	//other parameters !!!!!!!
 public:
@@ -95,7 +98,7 @@ public:
 			res->velocity[i] = dec_var_traits[i].max_velocity *
 				static_cast<numeric_type>(2.0 * unif(gen) - 1.0);
 			auto var_search = _hint.find(dec_var_traits[i].name);
-			if (var_search != _hint.end() && particles.empty()) {
+			if (var_search != _hint.end()) {
 				hintFound = true;
 				res->variables[i] = var_search->second;
 			}
@@ -104,7 +107,14 @@ public:
 			}
 		}
 		if (hintFound) {
-			particles.push_back(res);
+			if (particles.empty()) {
+				particles.push_back(res);
+			}
+			else {
+				if (particles[0] != nullptr)
+					delete particles[0];
+				particles[0] = res;
+			}
 			return;
 		}
 		//IF REACHED HERE THEN NO HINT EXISTS
@@ -146,6 +156,8 @@ public:
 
 	Solution* solve() {
 		size_t vsz = dec_var_values.size();
+		var_min.resize(vsz);
+		var_max.resize(vsz);
 		size_t psz = population_coef * vsz;
 		particles.resize(psz, nullptr);
 		size_t gbest = 0;
@@ -153,7 +165,7 @@ public:
 		std::vector<size_t> primes;
 		disc_div_coef.resize(vsz);
 		numeric_type adjusted_var_min, adjusted_var_max, 
-			_psz = static_cast<numeric_type>(psz);
+			cont_div_coef, _psz = static_cast<numeric_type>(psz);
 		//INITIALIZE THE PARTICLES RANDOMLY
 		primesieve::generate_n_primes(vsz - 1, &primes);
 		for (size_t i = (particles[0]==nullptr?0:1); i < psz; ++i) {
@@ -182,24 +194,20 @@ public:
 			particles[i] = res;
 		}
 		//COMPUTE FITNESSES, DETERMINE pbest AND gbest, CONSTRAINT VIOLATIONS
+		for (auto itr = var_min.begin(), end = var_min.end(); itr != end; ++itr) {
+			*itr = std::numeric_limits<numeric_type>::max();
+		}
+		for (auto itr = var_max.begin(), end = var_max.end(); itr != end; ++itr) {
+			*itr = -std::numeric_limits<numeric_type>::max();
+		}
 		for (size_t i = 0; i < psz; ++i) {
 			for (size_t j = 0; j < vsz; ++j) {
+				numeric_type& var_min_j = var_min[j];
+				numeric_type& var_max_j = var_max[j];
+				var_min_j = std::min(var_min_j, particles[i]->variables[j]);
+				var_max_j = std::max(var_max_j, particles[i]->variables[j]);
 				if (dec_var_traits[j].type == Var_Traits::DISC) {
-					numeric_type& var_min_j = var_min[j];
-					numeric_type& var_max_j = var_max[j];
-					var_min_j = std::min(var_min_j, particles[i]->variables[j]);
-					var_max_j = std::max(var_max_j, particles[i]->variables[j]);
-					if (static_cast<numeric_type>(unif(gen)) <= disc_div_coef[j]) {
-						if (unif(gen) <= 0.5) {
-							particles[i]->variables[j] = std::floor(particles[i]->variables[j]);
-						}
-						else {
-							particles[i]->variables[j] = std::ceil(particles[i]->variables[j]);
-						}
-					}
-					else {
-						particles[i]->variables[j] = std::round(particles[i]->variables[j]);
-					}
+					particles[i]->variables[j] = std::round(particles[i]->variables[j]);
 				}
 				dec_var_values[j] = particles[i]->variables[j];
 			}
@@ -279,28 +287,28 @@ public:
 		//___START THE MAIN OPTIMIZATION LOOP___
 		for (size_t iteration = 0; iteration < max_iteration; ++iteration) {
 			//CALCULATE DIVERSITY METRICS (only for discrete variables)
-			for (auto itr = var_min.begin(), end = var_min.end(); itr != end; ++itr) {
-				const size_t i = itr->first;
+			cont_div_coef = numeric_type{ 1.0 };
+			for (size_t i = 0; i < vsz; ++i) {
 				numeric_type& var_min_i = var_min[i];
 				numeric_type& var_max_i = var_max[i];
+				adjusted_var_min =
+					std::min(
+						var_max_i - lambda * (var_max_i - var_min_i),
+						std::max(
+							particles[gbest]->pbest[i] - 0.5 * lambda * (var_max_i - var_min_i),
+							var_min_i
+						)
+					);
+				adjusted_var_max =
+					std::max(
+						var_min_i + lambda * (var_max_i - var_min_i),
+						std::min(
+							particles[gbest]->pbest[i] + 0.5 * lambda * (var_max_i - var_min_i),
+							var_max_i
+						)
+					);
 				switch (dec_var_traits[i].type) {
 				case Var_Traits::DISC:
-					adjusted_var_min =
-						std::min(
-							var_max_i - lambda * (var_max_i - var_min_i),
-							std::max(
-								particles[gbest]->pbest[i] - 0.5 * lambda * (var_max_i - var_min_i),
-								var_min_i
-							)
-						);
-					adjusted_var_max =
-						std::max(
-							var_min_i + lambda * (var_max_i - var_min_i),
-							std::min(
-								particles[gbest]->pbest[i] + 0.5 * lambda * (var_max_i - var_min_i),
-								var_max_i
-							)
-						);
 					disc_div_coef[i] =
 						disc_div_coef_not *
 						std::pow(
@@ -312,9 +320,18 @@ public:
 							)
 						);
 					break;
+				case Var_Traits::CONT:
+					cont_div_coef *= std::pow((adjusted_var_max - adjusted_var_min) /
+						(dec_var_traits[i].upper_bound - dec_var_traits[i].lower_bound),
+						cont_div_metrix_exp);
+					break;
 				default: break;
 				}
 			}
+			cont_div_coef = cont_div_coef_not * 
+				std::pow(cont_div_coef_min,
+					std::pow(cont_div_coef*div_metric_const, 2)
+				);
 			//UPDATE THE PARTICLE VELOCITIES
 			for (size_t i = 0; i < psz; ++i) {
 				for (size_t j = 0; j < vsz; ++j) {
@@ -334,7 +351,9 @@ public:
 						(f_1t - particles[i]->variables[j]) +
 						global_accelerator * static_cast<numeric_type>(unif(gen)) *
 						(f_2t - particles[i]->variables[j]), 
-						dec_var_traits[j].max_velocity);
+						dec_var_traits[j].max_velocity) +
+						cont_div_coef * static_cast<numeric_type>(unif(gen)) *
+						particles[i]->velocity[j];
 					//UPDATE PARTICLE POSITIONS IN THE MEANTIME
 					particles[i]->prev_vars[j] = particles[i]->variables[j];
 					if (particles[i]->velocity[j] > (dec_var_traits[j].upper_bound - particles[i]->variables[j])) {
@@ -363,10 +382,10 @@ public:
 			}
 			//COMPUTE FITNESSES, DETERMINE pbest AND gbest, CONSTRAINT VIOLATIONS
 			for (auto itr = var_min.begin(), end = var_min.end(); itr != end; ++itr) {
-				itr->second = std::numeric_limits<numeric_type>::max();
+				*itr = std::numeric_limits<numeric_type>::max();
 			}
 			for (auto itr = var_max.begin(), end = var_max.end(); itr != end; ++itr) {
-				itr->second = -std::numeric_limits<numeric_type>::max();
+				*itr = -std::numeric_limits<numeric_type>::max();
 			}
 			for (size_t i = 0; i < psz; ++i) {
 				for (size_t j = 0; j < vsz; ++j) {
@@ -470,10 +489,11 @@ public:
 		const std::string& objective_func, const std::unordered_map<std::string, Var_Traits>& dec_vars,
 		const std::unordered_map<std::string, numeric_type>& params, const std::vector<std::string>& constraints,
 		numeric_type inertial_weight = numeric_type{ 0.5 }, numeric_type local_accelerator = numeric_type{ 1.4 },
-		numeric_type global_accelerator = numeric_type{ 1.4 }, numeric_type disc_div_coef_not = numeric_type{ 0.7 },
+		numeric_type global_accelerator = numeric_type{ 1.4 }, numeric_type cont_div_coef_not = numeric_type{ 0.1 },
+		numeric_type cont_div_coef_min = numeric_type{ 1.0e-10 }, numeric_type disc_div_coef_not = numeric_type{ 0.7 },
 		numeric_type lambda = numeric_type{ 0.2 }, size_t population_coef = 10, size_t max_iteration = 500,
 		numeric_type cons_tol = numeric_type{ 0.001 }, numeric_type space_intervals = numeric_type{ 10.0 }) {
-		size_t vsz = dec_vars.size();
+		size_t vsz = dec_vars.size(), disc_count = 0;
 		if (vsz == 0) {
 			throw "ERROR: dec_vars == 0";
 		}
@@ -486,9 +506,11 @@ public:
 		}
 		this->local_accelerator = local_accelerator;
 		this->global_accelerator = global_accelerator;
-		if (disc_div_coef_not <= 0.0 || lambda < 0.0 || lambda > 1.0) {
+		if (cont_div_coef_not <= 0.0 || cont_div_coef_min <= 0.0 || disc_div_coef_not <= 0.0 || lambda < 0.0 || lambda > 1.0) {
 			throw "ERROR: invalid diversity coefficient parameters";
 		}
+		this->cont_div_coef_not = cont_div_coef_not;
+		this->cont_div_coef_min = cont_div_coef_min;
 		this->disc_div_coef_not = disc_div_coef_not;
 		this->lambda = lambda;
 		if (population_coef == 0) {
@@ -530,11 +552,10 @@ public:
 			if (var_traits.type == Var_Traits::DISC) {
 				var_traits.lower_bound = std::round(var_traits.lower_bound);
 				var_traits.upper_bound = std::round(var_traits.upper_bound);
-				var_min[i] = std::numeric_limits<numeric_type>::max();
-				var_max[i] = -std::numeric_limits<numeric_type>::max();
 				var_traits.max_velocity = std::max(
 					(var_traits.upper_bound - var_traits.lower_bound) / space_intervals, 
 					numeric_type{ 0.5 });
+				++disc_count;
 			}
 			else {
 				var_traits.max_velocity =
@@ -544,6 +565,7 @@ public:
 				throw "ERROR: invalid lower/upper bounds";
 			}
 		}
+		this->cont_div_metrix_exp = numeric_type{ 1.0 } / static_cast<numeric_type>(vsz - disc_count);
 		expression.register_symbol_table(symbol_table);
 		for (size_t i = 0, csz = constraints.size(); i < csz; ++i) {
 			std::string normalized;
