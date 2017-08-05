@@ -1,6 +1,6 @@
-#include "GA_solver.h"
+#include "GA_solver.hpp"
 #include "exprtk.hpp"
-#include "binary_heap.h"
+#include "binary_heap.hpp"
 #include<vector>
 #include<limits>
 #include<cmath>
@@ -12,14 +12,14 @@
 #include<algorithm>
 #include<iostream>
 
-static std::random_device rd;
-static std::mt19937 gen(rd());
-static std::uniform_real_distribution<double> unif{ 0.0, 1.0 };
-static std::normal_distribution<double> norm{};
-
 //TRIES TO MAXIMIZE THE OBJECTIVE FUNCTION AND SATISFY ALL CONSTRAINTS
 template <typename numeric_type = double, typename discrete_type = long long>
 class GA_model_solver : public GA_solver<numeric_type> {
+
+	static std::random_device rd;
+	static std::mt19937_64 gen;
+	static std::uniform_real_distribution<double> unif;
+	static std::normal_distribution<double> norm;
 
 	class Anneal_impl : public Annealing {
 		t_type base;
@@ -118,52 +118,51 @@ private:
 	using Ind_ext_t = std::pair<Individual*, size_t>;
 	struct Comp_Ind_Ext_Ptr_Selection {
 		bool operator()(const Individual* o1, const Individual* o2) {
-			if (((const Individual_ext*)o1)->num_of_cons_viol == 0) {
-				if (((const Individual_ext*)o2)->num_of_cons_viol == 0) {
+			if (((const Individual_ext*)o1)->cons_viol ==
+				((const Individual_ext*)o2)->cons_viol) {
+				if (((const Individual_ext*)o1)->cons_viol == 0.0) {
 					return o1->criteria < o2->criteria;
 				}
 				else {
-					return true;
+					return ((const Individual_ext*)o1)->num_of_cons_viol <
+						((const Individual_ext*)o2)->num_of_cons_viol;
 				}
 			}
 			else {
-				if (((const Individual_ext*)o2)->num_of_cons_viol == 0) {
-					return false;
-				}
-				else {
-					if (((const Individual_ext*)o1)->num_of_cons_viol == ((const Individual_ext*)o2)->num_of_cons_viol) {
-						return ((const Individual_ext*)o1)->cons_viol < ((const Individual_ext*)o2)->cons_viol;
-					}
-					else {
-						return ((const Individual_ext*)o1)->num_of_cons_viol < ((const Individual_ext*)o2)->num_of_cons_viol;
-					}
-				}
+				return ((const Individual_ext*)o1)->cons_viol <
+					((const Individual_ext*)o2)->cons_viol;
 			}
 		}
 	};
 	struct Comp_Ind_Ext_t_Ptr_Elite_Selection {
 		bool operator()(const Ind_ext_t& o1, const Ind_ext_t& o2) {
-			if (((const Individual_ext*)o1.first)->num_of_cons_viol == ((const Individual_ext*)o2.first)->num_of_cons_viol) {
-				return o1.first->fitness < o2.first->fitness;
-			}
-			else if (((const Individual_ext*)o1.first)->num_of_cons_viol < ((const Individual_ext*)o2.first)->num_of_cons_viol) {
-				return false;
+			if (((const Individual_ext*)o1.first)->cons_viol == ((const Individual_ext*)o2.first)->cons_viol) {
+				if (((const Individual_ext*)o1.first)->cons_viol == 0.0) {
+					return o1.first->fitness < o2.first->fitness;
+				}
+				else {
+					return ((const Individual_ext*)o1.first)->num_of_cons_viol >
+						((const Individual_ext*)o2.first)->num_of_cons_viol;
+				}
 			}
 			else {
-				return true;
+				return ((const Individual_ext*)o1.first)->cons_viol > ((const Individual_ext*)o2.first)->cons_viol;
 			}
 		}
 	};
 	struct Comp_Ind_Ext_Ptr_Elite_Selection {
 		bool operator()(const Individual* o1, const Individual* o2) {
-			if (((const Individual_ext*)o1)->num_of_cons_viol == ((const Individual_ext*)o2)->num_of_cons_viol) {
-				return o1->fitness < o2->fitness;
-			}
-			else if (((const Individual_ext*)o1)->num_of_cons_viol < ((const Individual_ext*)o2)->num_of_cons_viol) {
-				return false;
+			if (((const Individual_ext*)o1)->cons_viol == ((const Individual_ext*)o2)->cons_viol) {
+				if (((const Individual_ext*)o1)->cons_viol == 0.0) {
+					return o1->fitness < o2->fitness;
+				}
+				else {
+					return ((const Individual_ext*)o1)->num_of_cons_viol >
+						((const Individual_ext*)o2)->num_of_cons_viol;
+				}
 			}
 			else {
-				return true;
+				return ((const Individual_ext*)o1)->cons_viol > ((const Individual_ext*)o2)->cons_viol;
 			}
 		}
 	};
@@ -306,7 +305,7 @@ private:
 			if (fitness_max < population[i]->fitness) {
 				fitness_max = population[i]->fitness;
 			}
-			((Individual_ext*)population[i])->cons_viol = 0.0;
+			((Individual_ext*)population[i])->cons_viol = numeric_type{ 0.0 };
 			((Individual_ext*)population[i])->num_of_cons_viol = 0;
 			for (size_t j = 0, consz = constraint_expressions.size(); j < consz; ++j) {
 				numeric_type cons_val = constraint_expressions[j].value();
@@ -321,7 +320,7 @@ private:
 		}
 		cur_fit = fitness_max;
 		for (size_t i = 0; i < psz; ++i) {
-			((Individual_ext*)population[i])->diversity = 0.0;
+			((Individual_ext*)population[i])->diversity = numeric_type{ 0.0 };
 			for (size_t j = 0; j < gsz; ++j) {
 				switch (dec_var_traits[j].type) {
 				case Gene_Traits::DISC:
@@ -346,7 +345,7 @@ private:
 			population[i]->criteria = x*x + y*y;
 		}
 		std::sort(population.begin(), population.end(), Comp_Ind_Ext_Ptr_Selection{});
-		cum = 0.0;
+		cum = prob{ 0.0 };
 		cur = p_s;
 		--psz;
 		for (size_t i = 0; i < psz; ++i) {
@@ -354,7 +353,7 @@ private:
 			((Individual_ext*)population[i])->cumul_s = cum;
 			cur *= (1 - p_s);
 		}
-		((Individual_ext*)population[psz])->cumul_s = 1.0;
+		((Individual_ext*)population[psz])->cumul_s = prob{ 1.0 };
 	}
 	void set_individual(Individual* dest, Individual const * source) {
 		for (size_t i = 0, gsz = dec_var_traits.size(); i < gsz; ++i) {
@@ -406,7 +405,6 @@ public:
 			for (size_t i = 0; i < elit_num; ++i) {
 				elite_indexes.insert(container[i].second);
 			}
-
 			if (cur_fit == prev_fit) {
 				auto elite_not_found = elite_indexes.end();
 				for (size_t i = psz / 2; i < psz; ++i) {
@@ -471,38 +469,12 @@ public:
 			//ANNEALING COOL DOWN REDUCES MEAN STEP SIZE
 			an->cool_down();
 		}
-		//FIND INDIVIDUAL WITH HIGHEST FITNESS
+		//FIND THE MOST ELITE INDIVIDUAL
+		process_population();
 		auto elite_not_found = elite_indexes.end();
 		for (size_t i = 0; i < psz; ++i) {
-			if (elite_indexes.find(i) != elite_not_found) {
-				if (fitness_max < population[i]->fitness) {
-					fitness_max = population[i]->fitness;
-					fit_max_index = i;
-				}
-			}
-			else {
-				for (size_t j = 0; j < gsz; ++j) {
-					numeric_type x;
-					switch (dec_var_traits[j].type) {
-					case Gene_Traits::DISC:
-						x = static_cast<numeric_type>(((Gene_disc*)(population[i]->genes[j]))->val);
-						break;
-					case Gene_Traits::CONT:
-						x = static_cast<numeric_type>(((Gene_cont*)(population[i]->genes[j]))->val);
-						break;
-					default:
-						x = std::numeric_limits<numeric_type>::max();
-						break;
-					}
-					dec_var_values[j] = x;
-				}
-				if (std::isnan(population[i]->fitness = static_cast<f_type>(expression.value()))) {
-					population[i]->fitness = -std::numeric_limits<numeric_type>::max();
-				}
-				if (fitness_max < population[i]->fitness) {
-					fitness_max = population[i]->fitness;
-					fit_max_index = i;
-				}
+			if (elit_comp(population[fit_max_index], population[i])) {
+				fit_max_index = i;
 			}
 		}
 		//CREATE NEW COPY OF THE FITTEST INDIVIDUAL AND MAKE NECESSARY CLEANUPS
@@ -511,14 +483,15 @@ public:
 		for (size_t i = 0; i < gsz; ++i) {
 			switch (dec_var_traits[i].type) {
 			case Gene_Traits::DISC:
-				(*res)[dec_var_names[i]] = static_cast<numeric_type>(((Gene_disc*)source->genes[i])->val);
+				res->solution[dec_var_names[i]] = static_cast<numeric_type>(((Gene_disc*)source->genes[i])->val);
 				break;
 			case Gene_Traits::CONT:
-				(*res)[dec_var_names[i]] = static_cast<numeric_type>(((Gene_cont*)source->genes[i])->val);
+				res->solution[dec_var_names[i]] = static_cast<numeric_type>(((Gene_cont*)source->genes[i])->val);
 				break;
 			default: break;
 			}
 		}
+		res->obj_val = source->fitness;
 		for (size_t i = 0; i < psz; ++i) {
 			delete population[i];
 		}
@@ -530,9 +503,9 @@ public:
 	GA_model_solver(
 		const std::string& objective_func, const std::unordered_map<std::string, Gene_Traits>& dec_vars,
 		const std::unordered_map<std::string, numeric_type>& params, const std::vector<std::string>& constraints,
-		size_t pop_coef = 10, double elit_ratio = 0.1, size_t generation = 1000, double cool_rate = 0.99, double conv_rate = 0.1,
-		numeric_type cons_tol = numeric_type{ 0.001 }, prob mut = 1.0, prob cro = 0.5, prob select = 0.2,
-		t_type temp_min = 0.0, t_type temp_max = 100000.0) {
+		size_t pop_coef = 10, size_t generation = 1000, double elit_ratio = 0.1, double cool_rate = 0.99, double conv_rate = 0.1,
+		numeric_type cons_tol = numeric_type{ 0.001 }, prob mut = prob{ 1.0 }, prob cro = prob{ 0.5 }, prob select = prob{ 0.2 },
+		t_type temp_min = t_type{ 0.0 }, t_type temp_max = t_type{ 100000.0 }) {
 		size_t vsz = dec_vars.size();
 		if (vsz == 0) {
 			throw "ERROR: dec_vars == 0";
@@ -547,7 +520,7 @@ public:
 			throw "ERROR: invalid probability";
 		}
 		if (vsz == 1) {
-			p_m = 1.0;
+			p_m = prob{ 1.0 };
 		}
 		else {
 			p_m = mut;
@@ -656,15 +629,14 @@ public:
 			delete *itr;
 		}
 	}
-
-	friend std::ostream& operator<<(std::ostream& out, const Solution* soln);
 };
 
-std::ostream& operator<<(std::ostream& out, const GA_model_solver<>::Solution* soln) {
-	if (soln) {
-		for (auto itr = soln->begin(), end = soln->end(); itr != end; ++itr) {
-			out << itr->first << ": " << itr->second << " ";
-		}
-	}
-	return out;
-}
+template <typename numeric_type, typename discrete_type>
+std::random_device GA_model_solver<numeric_type, discrete_type>::rd;
+template <typename numeric_type, typename discrete_type>
+std::mt19937_64 GA_model_solver<numeric_type, discrete_type>::gen = std::mt19937_64{ rd() };
+template <typename numeric_type, typename discrete_type>
+std::uniform_real_distribution<double> 
+GA_model_solver<numeric_type, discrete_type>::unif = std::uniform_real_distribution<double>{ 0.0, 1.0 };
+template <typename numeric_type, typename discrete_type>
+std::normal_distribution<double> GA_model_solver<numeric_type, discrete_type>::norm;

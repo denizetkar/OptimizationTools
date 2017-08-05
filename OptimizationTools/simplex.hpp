@@ -1,5 +1,5 @@
 #pragma once
-#include "split.h"
+#include "split.hpp"
 #include<vector>
 #include<unordered_map>
 #include<unordered_set>
@@ -9,6 +9,7 @@
 #include<string>
 #include<sstream>
 
+//TRIES TO MAXIMIZE THE OBJECTIVE FUNCTION AND SATISFY ALL CONSTRAINTS
 template <typename numeric_type = double>
 class Simplex_solver {
 	//using numeric_type = double;
@@ -38,6 +39,7 @@ class Simplex_solver {
 	std::vector<Equation> equations;
 	//DEC_VAR, ... , SLACK_VAR/SURP_VAR, ... , ARTF_VAR (stored in this order!)
 	std::vector<Variable> variables;
+	std::unordered_set<size_t> artf_var_indexes;
 	numeric_type TOLERANCE;
 	bool isInit;
 
@@ -50,6 +52,7 @@ public:
 	bool init(std::istream& in) {
 		equations.clear();
 		variables.clear();
+		artf_var_indexes.clear();
 		isInit = false;
 
 		std::vector<std::string> splits;
@@ -365,6 +368,7 @@ public:
 				//two_phase_z.var_to_coef[variables.size()] = numeric_type{ 1.0 };
 				equations[i].var_to_coef[variables.size()] = numeric_type{ 1.0 };
 				equations[i].basic_var_index = variables.size();
+				artf_var_indexes.insert(variables.size());
 				variables.push_back({ equations[i].rhs, Variable::ARTF_VAR, Ineq_type::GTE });
 				break;
 			default:

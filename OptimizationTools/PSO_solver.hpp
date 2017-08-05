@@ -10,17 +10,16 @@
 #include<algorithm>
 #include<cmath>
 
-static std::random_device rd;
-static std::mt19937_64 gen(rd());
-static std::uniform_real_distribution<double> unif{ 0.0, 1.0 };
-static std::normal_distribution<double> norm{};
-
 //TRIES TO MINIMIZE THE OBJECTIVE FUNCTION AND SATISFY ALL CONSTRAINTS
 template <typename numeric_type = double, typename discrete_type = long long>
 class PSO_solver {
 protected:
-	//using numeric_type = double;
-	//using discrete_type = long long;
+
+	static std::random_device rd;
+	static std::mt19937_64 gen;
+	static std::uniform_real_distribution<double> unif;
+	static std::normal_distribution<double> norm;
+
 	struct Particle {
 		std::vector<numeric_type> variables;
 		std::vector<numeric_type> prev_vars;
@@ -226,28 +225,12 @@ public:
 				}
 			}
 			//UPDATE pbest IF NECESSARY
-			bool updatePbest = false;
-			if (particles[i]->constr_viol > 0.0) {	//CURRENT PARTICLE IS INFEASIBLE
-				if (particles[i]->pbest_constr_viol > 0.0) {	//pbest PARTICLE IS INFEASIBLE
-					if (particles[i]->constr_viol < particles[i]->pbest_constr_viol) {
-						updatePbest = true;
-					}
-					else if (particles[i]->constr_viol == particles[i]->pbest_constr_viol) {
-						if (particles[i]->pbest_obj_val > particles[i]->obj_val) {
-							updatePbest = true;
-						}
-					}
-				}
+			bool updatePbest;
+			if (particles[i]->constr_viol == particles[i]->pbest_constr_viol) {
+				updatePbest = particles[i]->obj_val < particles[i]->pbest_obj_val;
 			}
-			else {	//CURRENT PARTICLE IS FEASIBLE
-				if (particles[i]->pbest_constr_viol > 0.0) {	//pbest PARTICLE IS INFEASIBLE
-					updatePbest = true;
-				}
-				else {	//pbest PARTICLE IS FEASIBLE
-					if (particles[i]->pbest_obj_val > particles[i]->obj_val) {
-						updatePbest = true;
-					}
-				}
+			else {
+				updatePbest = particles[i]->constr_viol < particles[i]->pbest_constr_viol;
 			}
 			if (updatePbest) {
 				for (size_t j = 0; j < vsz; ++j) {
@@ -257,28 +240,12 @@ public:
 				particles[i]->pbest_obj_val = particles[i]->obj_val;
 			}
 			//UPDATE gbest IF NECESSARY
-			bool updateGbest = false;
-			if (particles[i]->constr_viol > 0.0) {	//CURRENT PARTICLE IS INFEASIBLE
-				if (particles[gbest]->pbest_constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
-					if (particles[i]->constr_viol < particles[gbest]->pbest_constr_viol) {
-						updateGbest = true;
-					}
-					else if (particles[i]->constr_viol == particles[gbest]->pbest_constr_viol) {
-						if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
-							updateGbest = true;
-						}
-					}
-				}
+			bool updateGbest;
+			if (particles[i]->constr_viol == particles[gbest]->pbest_constr_viol) {
+				updateGbest = particles[i]->obj_val < particles[gbest]->pbest_obj_val;
 			}
-			else {	//CURRENT PARTICLE IS FEASIBLE
-				if (particles[gbest]->pbest_constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
-					updateGbest = true;
-				}
-				else {	//gbest PARTICLE IS FEASIBLE
-					if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
-						updateGbest = true;
-					}
-				}
+			else {
+				updateGbest = particles[i]->constr_viol < particles[gbest]->pbest_constr_viol;
 			}
 			if (updateGbest) {
 				gbest = i;
@@ -412,28 +379,12 @@ public:
 					}
 				}
 				//UPDATE pbest IF NECESSARY
-				bool updatePbest = false;
-				if (particles[i]->constr_viol > 0.0) {	//CURRENT PARTICLE IS INFEASIBLE
-					if (particles[i]->pbest_constr_viol > 0.0) {	//pbest PARTICLE IS INFEASIBLE
-						if (particles[i]->constr_viol < particles[i]->pbest_constr_viol) {
-							updatePbest = true;
-						}
-						else if (particles[i]->constr_viol == particles[i]->pbest_constr_viol) {
-							if (particles[i]->pbest_obj_val > particles[i]->obj_val) {
-								updatePbest = true;
-							}
-						}
-					}
+				bool updatePbest;
+				if (particles[i]->constr_viol == particles[i]->pbest_constr_viol) {
+					updatePbest = particles[i]->obj_val < particles[i]->pbest_obj_val;
 				}
-				else {	//CURRENT PARTICLE IS FEASIBLE
-					if (particles[i]->pbest_constr_viol > 0.0) {	//pbest PARTICLE IS INFEASIBLE
-						updatePbest = true;
-					}
-					else {	//pbest PARTICLE IS FEASIBLE
-						if (particles[i]->pbest_obj_val > particles[i]->obj_val) {
-							updatePbest = true;
-						}
-					}
+				else {
+					updatePbest = particles[i]->constr_viol < particles[i]->pbest_constr_viol;
 				}
 				if (updatePbest) {
 					for (size_t j = 0; j < vsz; ++j) {
@@ -443,28 +394,12 @@ public:
 					particles[i]->pbest_obj_val = particles[i]->obj_val;
 				}
 				//UPDATE gbest IF NECESSARY
-				bool updateGbest = false;
-				if (particles[i]->constr_viol > 0.0) {	//CURRENT PARTICLE IS INFEASIBLE
-					if (particles[gbest]->pbest_constr_viol> 0.0) {	//gbest PARTICLE IS INFEASIBLE
-						if (particles[i]->constr_viol < particles[gbest]->pbest_constr_viol) {
-							updateGbest = true;
-						}
-						else if (particles[i]->constr_viol == particles[gbest]->pbest_constr_viol) {
-							if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
-								updateGbest = true;
-							}
-						}
-					}
+				bool updateGbest;
+				if (particles[i]->constr_viol == particles[gbest]->pbest_constr_viol) {
+					updateGbest = particles[i]->obj_val < particles[gbest]->pbest_obj_val;
 				}
-				else {	//CURRENT PARTICLE IS FEASIBLE
-					if (particles[gbest]->pbest_constr_viol > 0.0) {	//gbest PARTICLE IS INFEASIBLE
-						updateGbest = true;
-					}
-					else {	//gbest PARTICLE IS FEASIBLE
-						if (particles[gbest]->pbest_obj_val > particles[i]->obj_val) {
-							updateGbest = true;
-						}
-					}
+				else {
+					updateGbest = particles[i]->constr_viol < particles[gbest]->pbest_constr_viol;
 				}
 				if (updateGbest) {
 					gbest = i;
@@ -488,11 +423,11 @@ public:
 	PSO_solver(
 		const std::string& objective_func, const std::unordered_map<std::string, Var_Traits>& dec_vars,
 		const std::unordered_map<std::string, numeric_type>& params, const std::vector<std::string>& constraints,
-		numeric_type inertial_weight = numeric_type{ 0.5 }, numeric_type local_accelerator = numeric_type{ 1.4 },
-		numeric_type global_accelerator = numeric_type{ 1.4 }, numeric_type cont_div_coef_not = numeric_type{ 0.1 },
-		numeric_type cont_div_coef_min = numeric_type{ 1.0e-10 }, numeric_type disc_div_coef_not = numeric_type{ 0.7 },
-		numeric_type lambda = numeric_type{ 0.2 }, size_t population_coef = 10, size_t max_iteration = 500,
-		numeric_type cons_tol = numeric_type{ 0.001 }, numeric_type space_intervals = numeric_type{ 10.0 }) {
+		size_t population_coef = 10, size_t max_iteration = 500, numeric_type space_intervals = numeric_type{ 10.0 },
+		numeric_type cons_tol = numeric_type{ 0.001 }, numeric_type inertial_weight = numeric_type{ 0.5 },
+		numeric_type local_accelerator = numeric_type{ 1.4 }, numeric_type global_accelerator = numeric_type{ 1.4 },
+		numeric_type cont_div_coef_not = numeric_type{ 0.1 }, numeric_type cont_div_coef_min = numeric_type{ 1.0e-10 },
+		numeric_type disc_div_coef_not = numeric_type{ 0.7 }, numeric_type lambda = numeric_type{ 0.2 }) {
 		size_t vsz = dec_vars.size(), disc_count = 0;
 		if (vsz == 0) {
 			throw "ERROR: dec_vars == 0";
@@ -638,3 +573,13 @@ public:
 	}
 
 };
+
+template <typename numeric_type, typename discrete_type>
+std::random_device PSO_solver<numeric_type, discrete_type>::rd;
+template <typename numeric_type, typename discrete_type>
+std::mt19937_64 PSO_solver<numeric_type, discrete_type>::gen = std::mt19937_64{ rd() };
+template <typename numeric_type, typename discrete_type>
+std::uniform_real_distribution<double>
+PSO_solver<numeric_type, discrete_type>::unif = std::uniform_real_distribution<double>{ 0.0, 1.0 };
+template <typename numeric_type, typename discrete_type>
+std::normal_distribution<double> PSO_solver<numeric_type, discrete_type>::norm;

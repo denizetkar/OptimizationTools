@@ -15,25 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="binary_heap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="exprtk.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GA_model_solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GA_solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="simplex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="split.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PSO_solver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="prime\primesieve\bits.hpp">
@@ -97,6 +79,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="prime\primesieve.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="binary_heap.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GA_model_solver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GA_solver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PSO_solver.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="simplex.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="split.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -113,10 +113,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="binary_heap.h" />
+    <ClInclude Include="binary_heap.hpp" />
     <ClInclude Include="exprtk.hpp" />
-    <ClInclude Include="GA_model_solver.h" />
-    <ClInclude Include="GA_solver.h" />
+    <ClInclude Include="GA_model_solver.hpp" />
+    <ClInclude Include="GA_solver.hpp" />
     <ClInclude Include="prime\primesieve.h" />
     <ClInclude Include="prime\primesieve.hpp" />
     <ClInclude Include="prime\primesieve\bits.hpp" />
@@ -138,9 +138,9 @@
     <ClInclude Include="prime\primesieve\SievingPrimes.hpp" />
     <ClInclude Include="prime\primesieve\StorePrimes.hpp" />
     <ClInclude Include="prime\primesieve\Wheel.hpp" />
-    <ClInclude Include="PSO_solver.h" />
-    <ClInclude Include="simplex.h" />
-    <ClInclude Include="split.h" />
+    <ClInclude Include="PSO_solver.hpp" />
+    <ClInclude Include="simplex.hpp" />
+    <ClInclude Include="split.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

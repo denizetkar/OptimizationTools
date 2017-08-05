@@ -9,7 +9,20 @@ class GA_solver {
 public:
 	using t_type = double;
 	using prob = double;
-	using Solution = std::unordered_map<std::string, numeric_type>;
+	struct Solution {
+		std::unordered_map<std::string, numeric_type> solution;
+		numeric_type obj_val;
+		friend std::ostream& operator<<(std::ostream& out, const Solution* soln) {
+			if (soln) {
+				for (auto itr = soln->solution.begin(),
+					end = soln->solution.end(); itr != end; ++itr) {
+					out << itr->first << ": " << itr->second << " ";
+				}
+				out << std::endl << "obj_val: " << soln->obj_val;
+			}
+			return out;
+		}
+	};
 protected:
 	using f_type = numeric_type;
 	class Annealing {
@@ -18,7 +31,8 @@ protected:
 		t_type temp_min, temp_max;
 		double cool_rate;
 	public:
-		Annealing(t_type min, t_type max, double c_rate) : temperature{ max }, temp_min{ min }, temp_max{ max }, cool_rate{ c_rate } {
+		Annealing(t_type min, t_type max, double c_rate) :
+			temperature{ max }, temp_min{ min }, temp_max{ max }, cool_rate{ c_rate } {
 			if (min >= max) {
 				throw "ERROR: min >= max";
 			}
