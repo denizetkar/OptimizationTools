@@ -15,7 +15,7 @@ int main() {
 		//std::string equation = "100*(y-x^2)^2+(1-x)^2";
 		//rastrigin's (global minimum at 0,0)
 		//std::string equation = "20+(x^2-10*cos(2*pi*x))+(y^2-10*cos(2*pi*y))";
-		
+
 		std::string equation = "-(1.5*x1+2.5*x2+3*x3+4.5*x4)";
 		std::unordered_map<std::string, PSO_solver<>::Var_Traits> dec_vars;
 		dec_vars["x1"] = PSO_solver<>::Var_Traits{
@@ -57,10 +57,8 @@ int main() {
 		in >> solver;
 		Simplex_solver<>::Solution * soln = solver.solve();
 
-		for (auto itr = soln->begin(), end = soln->end(); itr != end; ++itr) {
-			std::cout << *itr << " ";
-		}
-		std::cout << std::endl;
+		std::cout << soln << std::endl;
+
 		delete soln;
 	}
 

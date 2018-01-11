@@ -44,10 +44,22 @@ class Simplex_solver {
 	bool isInit;
 
 	inline bool zeroCheck(const numeric_type& num) const {
-		return (num > -TOLERANCE && num < TOLERANCE);
+		return (num >= -TOLERANCE && num <= TOLERANCE);
 	}
 public:
-	using Solution = std::vector<numeric_type>;
+	struct Solution {
+		std::vector<numeric_type> solution;
+		numeric_type obj_val;
+		friend std::ostream& operator<<(std::ostream& out, const Solution* soln) {
+			if (soln) {
+				for (size_t i = 0, sz = soln->solution.size(); i < sz; ++i) {
+					out << "x" << i << ": " << soln->solution[i] << " ";
+				}
+				out << std::endl << "obj_val: " << soln->obj_val;
+			}
+			return out;
+		}
+	};
 
 	bool init(std::istream& in) {
 		equations.clear();
@@ -67,18 +79,18 @@ public:
 				return false;
 			}
 			//ADD OBJECTIVE VALUE 'z'
-			variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
+			variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
 			//WE EXPECT THE SIGN RESTRICTION DECLARATIONS FOR EACH VARIABLE
 			std::split(line, splits);
 			for (size_t i = 0, sz = splits.size(); i < sz; ++i) {
 				if (splits[i] == "LTE") {
-					variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::LTE });
+					variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::LTE });
 				}
 				else if (splits[i] == "GTE") {
-					variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::GTE });
+					variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::GTE });
 				}
 				else if (splits[i] == "URS") {
-					variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
+					variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
 				}
 				else {
 					return false;
@@ -91,14 +103,15 @@ public:
 			}
 			splits.clear();
 			std::split(line, splits, Variable_seperator{});
-			if (splits.size() > vsz) {
+			size_t sz = splits.size();
+			if (sz > vsz || sz == 0) {
 				return false;
 			}
 			equations.push_back(Equation{});
 			std::vector<std::string> sub_splits;
 			size_t index;
 			equations[0].var_to_coef[0] = numeric_type{ 1.0 };
-			for (size_t i = 0, sz = splits.size(); i < sz; ++i) {
+			for (size_t i = 0, _sz = sz - 1; i < _sz; ++i) {
 				std::split(splits[i], sub_splits, Value_seperator{});
 				if (sub_splits.size() != 2) {
 					return false;
@@ -106,7 +119,7 @@ public:
 				ss.str(sub_splits[0]);
 				ss.seekg(0);
 				ss >> index;
-				if (index >= vsz) {
+				if (index >= vsz || index == 0) {
 					return false;
 				}
 				ss.str(sub_splits[1]);
@@ -128,9 +141,10 @@ public:
 				}
 				splits.clear();
 				std::split(line, splits, Variable_seperator{});
+				size_t sz = splits.size();
 				//INEQ_TYPE - VARIABLE COEFFICIENTS - RHS
 				//VARIABLE COEFFICIENTS: "index,value"
-				if (splits.size() > (vsz + 1)) {
+				if (sz > (vsz + 1) || sz <= 1) {
 					return false;
 				}
 				equations.push_back(Equation{});
@@ -146,7 +160,7 @@ public:
 				else {
 					return false;
 				}
-				for (size_t i = 0, sz = splits.size() - 2; i < sz; ++i) {
+				for (size_t i = 0, _sz = sz - 2; i < _sz; ++i) {
 					std::split(splits[i + 1], sub_splits, Value_seperator{});
 					if (sub_splits.size() != 2) {
 						return false;
@@ -154,7 +168,7 @@ public:
 					ss.str(sub_splits[0]);
 					ss.seekg(0);
 					ss >> index;
-					if (index >= vsz) {
+					if (index >= vsz || index == 0) {
 						return false;
 					}
 					ss.str(sub_splits[1]);
@@ -176,18 +190,18 @@ public:
 				return false;
 			}
 			//ADD OBJECTIVE VALUE 'z'
-			variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
+			variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
 			//WE EXPECT THE SIGN RESTRICTION DECLARATIONS FOR EACH VARIABLE
 			std::split(line, splits);
 			for (size_t i = 0, sz = splits.size(); i < sz; ++i) {
 				if (splits[i] == "LTE") {
-					variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::LTE });
+					variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::LTE });
 				}
 				else if (splits[i] == "GTE") {
-					variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::GTE });
+					variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::GTE });
 				}
 				else if (splits[i] == "URS") {
-					variables.push_back({ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
+					variables.push_back(Variable{ numeric_type{}, Variable::DEC_VAR, Ineq_type::URS });
 				}
 				else {
 					return false;
@@ -276,7 +290,6 @@ public:
 			return nullptr;
 		}
 		isInit = false;
-		Solution * soln = new Solution;
 		//MAPS URS VARIABLE 'x' TO 'x1' (same as 'x') AND 'x2' WHERE 'x = x1 - x2'
 		std::unordered_map<size_t, size_t> urs_map;
 		Equation two_phase_z;
@@ -313,7 +326,7 @@ public:
 						equations[k].var_to_coef[j] = -search->second;
 					}
 				}
-				variables.push_back({ numeric_type{ 0.0 }, Variable::URS_VAR, Ineq_type::GTE });
+				variables.push_back(Variable{ numeric_type{ 0.0 }, Variable::URS_VAR, Ineq_type::GTE });
 				urs_map[i] = j;
 				++j;
 				//variables[i].ineq_type = Ineq_type::GTE;
@@ -346,12 +359,12 @@ public:
 				//ADD SLACK VARIABLE
 				equations[i].var_to_coef[variables.size()] = numeric_type{ 1.0 };
 				equations[i].basic_var_index = variables.size();
-				variables.push_back({ equations[i].rhs, Variable::SLACK_VAR, Ineq_type::GTE });
+				variables.push_back(Variable{ equations[i].rhs, Variable::SLACK_VAR, Ineq_type::GTE });
 				break;
 			case Ineq_type::GTE:
 				//ADD SURPLUS VARIABLE
 				equations[i].var_to_coef[variables.size()] = numeric_type{ -1.0 };
-				variables.push_back({ numeric_type{ 0.0 }, Variable::SURP_VAR, Ineq_type::GTE });
+				variables.push_back(Variable{ numeric_type{ 0.0 }, Variable::SURP_VAR, Ineq_type::GTE });
 			case Ineq_type::EQ:
 				//ADD ARTIFICIAL VARIABLE
 				easyBFS = false;
@@ -369,7 +382,7 @@ public:
 				equations[i].var_to_coef[variables.size()] = numeric_type{ 1.0 };
 				equations[i].basic_var_index = variables.size();
 				artf_var_indexes.insert(variables.size());
-				variables.push_back({ equations[i].rhs, Variable::ARTF_VAR, Ineq_type::GTE });
+				variables.push_back(Variable{ equations[i].rhs, Variable::ARTF_VAR, Ineq_type::GTE });
 				break;
 			default:
 				throw "ERROR: invalid constraint";
@@ -407,7 +420,6 @@ public:
 				if (isOptimal) {
 					if (!zeroCheck(two_phase_z.rhs)) {	//CASE1
 						//throw "ERROR: phase-1 optimality where rhs is non-zero";
-						delete soln;
 						return nullptr;
 					}
 					break;
@@ -614,9 +626,10 @@ public:
 			variables[equations[i].basic_var_index].val = equations[i].rhs;
 		}
 
+		Solution * res = new Solution;
 		//COPY VALUES OF THE DECISION VARIABLES AND RETURN IT AS RESULT
-		variables[0].ineq_type = Ineq_type::GTE;
-		for (size_t i = 0, vsz = variables.size(); i < vsz; ++i) {
+		res->obj_val = variables[0].val;
+		for (size_t i = 1, vsz = variables.size(); i < vsz; ++i) {
 			if (variables[i].var_type == Variable::URS_VAR) {
 				break;
 			}
@@ -631,10 +644,10 @@ public:
 				default:
 					break;
 				}
-				soln->push_back(variables[i].val);
+				res->solution.push_back(variables[i].val);
 			}
 		}
-		return soln;
+		return res;
 	}
 
 	Simplex_solver(numeric_type tolerance = numeric_type{ 0.00001 }) : isInit{ false }, TOLERANCE{ tolerance } {

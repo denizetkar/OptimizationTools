@@ -1,3 +1,4 @@
+#pragma once
 #include "GA_solver.hpp"
 #include "exprtk.hpp"
 #include "binary_heap.hpp"
